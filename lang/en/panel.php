@@ -38,6 +38,7 @@ return [
     'tag_interested' => 'interested',
     'form_shown' => 'Contact form shown',
     'form_reason_interest' => 'showed interest',
+    'form_reason_contact_request' => 'asked to be contacted',
     'form_reason_price' => 'asked about the price',
     'form_reason_goodbye' => 'said goodbye',
     'form_reason_close' => 'closed the chat',

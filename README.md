@@ -52,6 +52,7 @@ filled and survives a reload.
 
 It is placed when the visitor:
 
+- asks to be called, contacted or written to, or asks for the form itself;
 - shows real interest (the model's `qualified`), the first time;
 - asks about prices, budgets or timelines (in English, Spanish, Catalan or French);
 - says goodbye after showing interest;

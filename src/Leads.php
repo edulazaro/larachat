@@ -29,6 +29,12 @@ class Leads
     /** Prices, budgets and timelines, in the package's languages. */
     protected const PRICE = '/\b(precios?|presupuestos?|cu[aá]nto\s+(cuesta|cobr\w*|vale|sale|ser[ií]a|costar\w*|tard\w*|tiempo)|costes?|costos?|tarifas?|plazos?|prices?|pricing|costs?|quotes?|quotations?|budgets?|estimates?|how\s+much|timelines?|how\s+long|preus?|pressupost(os)?|quant\s+(costa|val|triga)|prix|tarifs?|devis|co[uû]ts?|d[eé]lais?|combien)\b/iu';
 
+    /**
+     * The visitor wants to be called, contacted or written to, or asks for the
+     * form itself, in the package's languages. "¿Cómo te llamas?" is not one.
+     */
+    protected const CONTACT_REQUEST = '/\b(ll[aá]m(adme|arme|ame|enme|eis|éis|en|adnos|arnos)|me\s+(ll[aá]m(e|en|éis|eis|ad|ar[aá]s|ar[aá]n|ar[eé]is)|contact(e|en|éis|eis|ad|ar[aá]s|ar[aá]n|ar[eé]is)|escrib(a|an|áis|ais|id|ir[aá]s|ir[aá]n|ir[eé]is))|pod[eé]is\s+(llamar|contactar|escribir)|puedes\s+(llamar|contactar|escribir)(me)?|pueden\s+(llamar|contactar|escribir)(me)?|una\s+llamada|contact(adme|arme|enme|adnos|arnos)|ponerme\s+en\s+contacto|escr[ií]b(idme|eme|anme|idnos)|formularios?|call\s+(me|us)|give\s+me\s+a\s+call|call\s+back|contact\s+(me|us)|get\s+in\s+touch|reach\s+(me|out)|e-?mail\s+me|text\s+me|the\s+form|a\s+form|truca\W?m|trucar-me|truqueu-me|em\s+truqueu|contacteu-me|contactar-me|escriviu-me|m\W?escriviu|formulari|appelez-moi|appelle-moi|rappelez-moi|me\s+rappeler|contactez-moi|me\s+contacter|[eé]crivez-moi|formulaire)\b/iu';
+
     /** A goodbye, in the package's languages. */
     protected const GOODBYE = '/\b(adi[oó]s|chao|chau|hasta\s+(luego|pronto|otra|ma[nñ]ana)|nos\s+vemos|me\s+voy|bye|goodbye|see\s+you|that.?s\s+all|ad[eé]u|fins\s+(aviat|despr[eé]s|dem[aà])|au\s+revoir|[aà]\s+bient[oô]t|[aà]\s+plus)\b/iu';
 
@@ -39,6 +45,11 @@ class Leads
     public function asksAboutPrice(string $text): bool
     {
         return (bool) preg_match(self::PRICE, $text);
+    }
+
+    public function asksToBeContacted(string $text): bool
+    {
+        return (bool) preg_match(self::CONTACT_REQUEST, $text);
     }
 
     public function saysGoodbye(string $text): bool
@@ -57,16 +68,18 @@ class Leads
             return null;
         }
 
+        $contact = $this->asksToBeContacted($visitorMessage);
         $price = $this->asksAboutPrice($visitorMessage);
         $justInterested = false;
 
-        if (($qualified || $price) && ! $session->qualified_at) {
+        if (($qualified || $price || $contact) && ! $session->qualified_at) {
             $session->update(['qualified_at' => now()]);
             $justInterested = true;
             $this->notifier->interested($session, $visitorMessage);
         }
 
         $reason = match (true) {
+            $contact => 'contact_request',
             $price => 'price',
             $session->qualified_at && $this->saysGoodbye($visitorMessage) => 'goodbye',
             $justInterested => 'interest',
@@ -96,6 +109,28 @@ class Leads
             // The title, so the transcript reads sensibly anywhere it is shown as text.
             'message' => $this->title($reason, $session->locale()),
             'meta' => ['reason' => $reason],
+            'is_read' => true,
+        ]);
+    }
+
+    /**
+     * The open form, moved to the end of the conversation (the old one closes,
+     * the count does not change), or a new one if there is none.
+     */
+    public function bringForward(ChatSession $session, string $reason): ?ChatMessage
+    {
+        $open = $this->open($session);
+        if (! $open) {
+            return $this->place($session, $reason);
+        }
+
+        $this->closeOpen($session);
+
+        return $session->messages()->create([
+            'sender' => 'assistant',
+            'kind' => self::FORM,
+            'message' => $open->message,
+            'meta' => ['reason' => $open->meta['reason'] ?? $reason],
             'is_read' => true,
         ]);
     }
@@ -174,7 +209,7 @@ class Leads
 
     protected function title(string $reason, string $locale): string
     {
-        $key = in_array($reason, ['interest', 'price', 'goodbye', 'close', 'handoff', 'wait', 'busy'], true) ? $reason : 'interest';
+        $key = in_array($reason, ['interest', 'contact_request', 'price', 'goodbye', 'close', 'handoff', 'wait', 'busy'], true) ? $reason : 'interest';
 
         return Larachat::persona()->text('form_' . $key, $locale);
     }

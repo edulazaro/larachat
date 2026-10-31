@@ -18,6 +18,7 @@ return [
     // When the visitor asks for a person and nobody is at the panel.
     'unavailable_with_contact' => 'Ara mateix :owner no està disponible, però ja tinc les teves dades i t\'escriurà personalment tan aviat com pugui.',
     'unavailable_ask_contact' => 'Ara mateix :owner no està disponible. Deixa-li les teves dades aquí sota i t\'escriurà personalment tan aviat com pugui.',
+    'unavailable_form_open' => 'Tens el formulari just aquí sota: deixa-hi les teves dades i :owner t\'escriurà personalment tan aviat com pugui.',
 
     // Mode changes and endings.
     'hello_again' => 'Hola de nou! Soc :bot, en què et puc ajudar?',
@@ -29,6 +30,7 @@ return [
 
     // The contact form: its title for each moment it appears, the privacy line and the errors.
     'form_interest' => 'Perquè :owner t\'escrigui',
+    'form_contact_request' => 'Perquè :owner et contacti',
     'form_price' => 'Perquè :owner t\'enviï el pressupost',
     'form_goodbye' => 'Abans de marxar: on t\'escriu :owner?',
     'form_close' => 'Vols que :owner t\'escrigui?',

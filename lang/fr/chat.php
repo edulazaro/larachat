@@ -18,6 +18,7 @@ return [
     // When the visitor asks for a person and nobody is at the panel.
     'unavailable_with_contact' => ':owner n\'est pas disponible pour le moment, mais j\'ai vos coordonnées et vous recevrez une réponse personnelle dès que possible.',
     'unavailable_ask_contact' => ':owner n\'est pas disponible pour le moment. Laissez vos coordonnées ci-dessous et vous recevrez une réponse personnelle dès que possible.',
+    'unavailable_form_open' => 'Le formulaire est juste en dessous : laissez-y vos coordonnées et :owner vous écrira personnellement dès que possible.',
 
     // Mode changes and endings.
     'hello_again' => 'Re-bonjour ! Je suis :bot, comment puis-je vous aider ?',
@@ -29,6 +30,7 @@ return [
 
     // The contact form: its title for each moment it appears, the privacy line and the errors.
     'form_interest' => 'Pour que :owner vous écrive',
+    'form_contact_request' => 'Pour que :owner vous contacte',
     'form_price' => 'Pour que :owner vous envoie un devis',
     'form_goodbye' => 'Avant de partir : où :owner peut vous écrire ?',
     'form_close' => 'Voulez-vous que :owner vous écrive ?',

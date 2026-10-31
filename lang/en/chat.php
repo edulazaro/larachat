@@ -18,6 +18,7 @@ return [
     // When the visitor asks for a person and nobody is at the panel.
     'unavailable_with_contact' => ':owner isn\'t available right now, but I have your details and they\'ll get back to you personally as soon as possible.',
     'unavailable_ask_contact' => ':owner isn\'t available right now. Leave your details below and they\'ll get back to you personally as soon as possible.',
+    'unavailable_form_open' => 'The form is right below: leave your details there and :owner will write to you personally as soon as possible.',
 
     // Mode changes and endings.
     'hello_again' => 'Hello again! I\'m :bot, how can I help you?',
@@ -29,6 +30,7 @@ return [
 
     // The contact form: its title for each moment it appears, the privacy line and the errors.
     'form_interest' => 'So :owner can get back to you',
+    'form_contact_request' => 'So :owner can contact you',
     'form_price' => 'So :owner can send you a quote',
     'form_goodbye' => 'Before you go: where can :owner reach you?',
     'form_close' => 'Would you like :owner to get in touch?',

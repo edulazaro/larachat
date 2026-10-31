@@ -38,6 +38,7 @@ return [
     'tag_interested' => 'interesado',
     'form_shown' => 'Formulario de contacto mostrado',
     'form_reason_interest' => 'mostró interés',
+    'form_reason_contact_request' => 'pidió que le contactaras',
     'form_reason_price' => 'preguntó el precio',
     'form_reason_goodbye' => 'se despidió',
     'form_reason_close' => 'cerró el chat',

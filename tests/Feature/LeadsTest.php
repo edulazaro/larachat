@@ -89,6 +89,61 @@ class LeadsTest extends TestCase
         $this->assertTrue($session->fresh()->hasContact());
     }
 
+    /**
+     * kenodo.com, 2026-10-31: "quiero que me llaméis" with Edu away got a reply
+     * about a form that never appeared, and "dame el formulario" a link to the
+     * contact page. Asking to be contacted, or for the form, now places it.
+     */
+    public function test_asking_to_be_called_or_for_the_form_places_it(): void
+    {
+        $this->fakeOpenAi([
+            ['reply' => '¡Hola! ¿En qué puedo ayudarte?'],
+            ['reply' => 'Se lo paso a Edu.'],
+        ]);
+        $token = $this->startChat();
+
+        $this->assertNull($this->say($token, 'hola')->json('form'));
+        $call = $this->say($token, 'quiero que me llaméis');
+        $this->assertSame(__('larachat::chat.form_contact_request', ['owner' => 'Edu'], 'es'), $call->json('form.title'));
+        $this->assertNotNull(ChatSession::first()->qualified_at);
+
+        // The greeting the widget showed is the bot's first turn for the model, so it
+        // does not introduce itself again; and it is told never to mention a form.
+        $first = collect($this->sent)->where('step', 'reply')->first()['body']['messages'];
+        $assistant = array_values(array_filter($first, fn ($m) => $m['role'] === 'assistant'));
+        $this->assertStringStartsWith('¡Hola! Soy Nodo', $assistant[0]['content']);
+        $system = $first[0]['content'][0]['text'];
+        $this->assertStringContainsString('never mention a form', $system);
+    }
+
+    public function test_with_the_owner_away_a_request_for_a_person_gets_the_form_not_a_promise(): void
+    {
+        $this->fakeOpenAi(['reply' => 'Te paso con Edu.', 'handoff' => true]);
+        $token = $this->startChat();
+
+        $response = $this->say($token, 'Quiero hablar con una persona');
+
+        $this->assertSame(__('larachat::chat.unavailable_ask_contact', ['owner' => 'Edu'], 'es'), $response->json('ai_reply'));
+        $this->assertSame(__('larachat::chat.form_handoff', ['owner' => 'Edu'], 'es'), $response->json('form.title'));
+        $variable = collect($this->sent)->where('step', 'reply')->last()['body']['messages'][1]['content'];
+        $this->assertStringContainsString('still set handoff to true', $variable);
+        $this->assertStringNotContainsString('keep handoff false', $variable);
+    }
+
+    public function test_asking_again_with_the_form_open_points_to_it_instead_of_repeating(): void
+    {
+        $this->fakeOpenAi(['reply' => 'Te paso con Edu.', 'handoff' => true]);
+        $token = $this->startChat();
+
+        $this->say($token, 'quiero hablar con alguien');
+        $again = $this->say($token, 'dame el formulario');
+
+        $this->assertSame(__('larachat::chat.unavailable_form_open', ['owner' => 'Edu'], 'es'), $again->json('ai_reply'));
+        $this->assertNotNull($again->json('form'), 'the form moves to the end of the conversation');
+        $this->assertCount(1, $this->openForms($token));
+        $this->assertSame(1, ChatSession::first()->contact_forms, 'moving it is not asking again');
+    }
+
     public function test_a_question_about_the_price_is_interest_on_its_own(): void
     {
         $this->fakeOpenAi(['reply' => 'Depende del alcance.']);
@@ -201,6 +256,13 @@ class LeadsTest extends TestCase
     public function test_prices_and_goodbyes_are_recognised_in_every_language(): void
     {
         $leads = app(Leads::class);
+
+        foreach (['quiero que me llaméis', 'dame el formulario', '¿me podéis llamar?', 'contactadme', 'call me back', 'please get in touch', "truca'm demà", 'appelez-moi'] as $text) {
+            $this->assertTrue($leads->asksToBeContacted($text), $text);
+        }
+        foreach (['¿Cómo te llamas?', 'me llamo Laura', 'hola', '¿cómo se llama la empresa?', 'escribo desde Andorra'] as $text) {
+            $this->assertFalse($leads->asksToBeContacted($text), $text);
+        }
 
         foreach (['¿me darías precio?', '¿Cuánto cuesta?', 'what would it cost', 'Do you have a quote?', 'quin és el pressupost?', 'Quel est le prix ?', 'plazos de entrega'] as $text) {
             $this->assertTrue($leads->asksAboutPrice($text), $text);

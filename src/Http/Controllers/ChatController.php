@@ -140,7 +140,7 @@ class ChatController extends Controller
                 // The contact form, when this is one of the moments to ask for it.
                 if (empty($result['off_topic'])) {
                     $form = match (true) {
-                        ! empty($result['ask_contact']) => $this->leads->place($session, 'handoff'),
+                        ! empty($result['ask_contact']) => $this->leads->bringForward($session, 'handoff'),
                         ! empty($result['busy']) => $this->leads->place($session, 'busy'),
                         default => $this->leads->afterReply($session, $text, (bool) ($result['qualified'] ?? false)),
                     };
