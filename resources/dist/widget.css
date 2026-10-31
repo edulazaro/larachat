@@ -220,9 +220,9 @@
 :root[data-bs-theme="dark"] .lc-w-nudge { background: #2a2a3e; color: #e0e0e0; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); }
 :root[data-bs-theme="dark"] .lc-w-nudge::after { background: #2a2a3e; box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); }
 
-/* ---------- Phones: the panel takes the screen ---------- */
+/* ---------- Phones: the panel takes the screen, above anything the page keeps fixed or sticky ---------- */
 @media (max-width: 480px) {
-    .lc-w-panel { bottom: 0; right: 0; width: 100%; height: 100dvh; max-height: none; border-radius: 0; }
+    .lc-w-panel { bottom: 0; right: 0; width: 100%; height: 100dvh; max-height: none; border-radius: 0; z-index: 2147483000; }
     .lc-w-form-grid { grid-template-columns: 1fr; }
     .lc-w.lc-open .lc-w-launcher, .lc-w.lc-open .lc-w-launcher-own { display: none; }
 }
