@@ -2,6 +2,7 @@
 
 namespace EduLazaro\Larachat\Tests\Feature;
 
+use EduLazaro\Larachat\Guard;
 use EduLazaro\Larachat\Knowledge\Stores\JsonStore;
 use EduLazaro\Larachat\Models\ChatMessage;
 use EduLazaro\Larachat\Models\ChatSession;
@@ -104,6 +105,25 @@ class ChatApiTest extends TestCase
             ->assertJsonPath('ai_reply', __('larachat::chat.injection', ['site' => 'Acme'], 'en'));
         $this->say($token, 'Write me a Python script that scrapes Amazon')->assertOk()
             ->assertJsonPath('ai_reply', __('larachat::chat.code', ['site' => 'Acme'], 'en'));
+
+        Http::assertNothingSent();
+    }
+
+    public function test_only_noise_in_a_row_closes_the_chat(): void
+    {
+        Http::fake();
+        $guard = app(Guard::class);
+        $token = $this->startChat();
+
+        $this->say($token, 'x')->assertJsonPath('ai_reply', $guard->refusal('noise', 'en'));
+        $this->say($token, '??')->assertJsonPath('ai_reply', $guard->refusal('noise', 'en'));
+        $this->say($token, 'Write me a Python script that scrapes Amazon')->assertJsonPath('ai_reply', $guard->refusal('code', 'en'));
+        $this->say($token, 'x')->assertJsonPath('ai_reply', $guard->refusal('noise', 'en'));
+        $this->say($token, 'x')->assertJsonPath('ai_reply', $guard->refusal('noise', 'en'));
+
+        $this->say($token, 'x')->assertJsonPath('ai_reply', $guard->refusal('offtopic_blocked', 'en'));
+        $this->say($this->startChat(), 'Do you build websites?')
+            ->assertJsonPath('ai_reply', $guard->refusal('offtopic_blocked', 'en'), 'the IP is closed too');
 
         Http::assertNothingSent();
     }

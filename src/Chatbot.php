@@ -62,14 +62,19 @@ class Chatbot
             return $this->guarded('offtopic_blocked', $locale, offTopic: true);
         }
 
-        // Counted against the off-topic bucket, which is per session AND per IP:
-        // a few of these and the chat is closed for 24 h, checked before any API
-        // call, so letter-by-letter spam cannot be paid for more than a few times.
+        // Only a run counts, per conversation AND per IP: a few in a row close the
+        // chat for 24 h, and any message with something in it starts the count
+        // again. Checked before any API call, so letter-by-letter spam costs nothing.
         if ($this->guard->isNoise($visitorMessage)) {
-            $strikes = $this->guard->offTopicStrike($session->id, $session->visitor_ip);
+            if ($this->guard->noiseStrike($session->id, $session->visitor_ip) >= $this->guard->maxNoise()) {
+                $this->guard->blockOffTopic($session->id, $session->visitor_ip);
 
-            return $this->guarded($strikes >= $this->guard->maxOffTopic() ? 'offtopic_blocked' : 'noise', $locale, offTopic: true);
+                return $this->guarded('offtopic_blocked', $locale, offTopic: true);
+            }
+
+            return $this->guarded('noise', $locale, offTopic: true);
         }
+        $this->guard->resetNoise($session->id, $session->visitor_ip);
 
         if ($this->guard->isInjection($visitorMessage)) {
             $this->guard->strike($session->id);

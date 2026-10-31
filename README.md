@@ -24,8 +24,8 @@ bot is (a persona) and how the widget looks.
 
 1. **Guards, no API call.** A conversation closed for abuse, a message with nothing in it
    ("x", "???", letters one by one), a prompt-injection attempt or a request for code gets a
-   fixed answer. Injection strikes close the conversation for a day; noise counts as
-   off-topic.
+   fixed answer. Injection strikes close the conversation for a day, and so do a few empty
+   messages in a row (any real message starts that count again).
 2. **Scope filter and embedding, in parallel.** A cheap model (`filter_model`) decides
    whether the message is for this chat at all, while the query is embedded. Off-topic gets a
    fixed answer and the main model is never called; a few of those (per conversation AND per

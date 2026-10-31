@@ -165,6 +165,43 @@ class Guard
         return false;
     }
 
+    /**
+     * One more message with nothing in it, counted per conversation and per
+     * IP. Returns the longest current run: only messages in a row count, and
+     * resetNoise() ends the run.
+     */
+    public function noiseStrike(int $sessionId, ?string $ip): int
+    {
+        $count = 0;
+        foreach ($this->noiseKeys($sessionId, $ip) as $key) {
+            Cache::add($key, 0, self::STRIKE_TTL);
+            $count = max($count, (int) Cache::increment($key));
+        }
+
+        return $count;
+    }
+
+    /** A message with something in it ends the run of noise. */
+    public function resetNoise(int $sessionId, ?string $ip): void
+    {
+        foreach ($this->noiseKeys($sessionId, $ip) as $key) {
+            Cache::forget($key);
+        }
+    }
+
+    /** Closes the chat for the day, as enough off-topic messages do. */
+    public function blockOffTopic(int $sessionId, ?string $ip): void
+    {
+        foreach ($this->offTopicKeys($sessionId, $ip) as $key) {
+            Cache::put($key, $this->maxOffTopic(), self::STRIKE_TTL);
+        }
+    }
+
+    public function maxNoise(): int
+    {
+        return (int) config('larachat.limits.noise', 3);
+    }
+
     public function maxStrikes(): int
     {
         return (int) config('larachat.limits.strikes', 3);
@@ -181,6 +218,15 @@ class Guard
         return array_values(array_filter([
             'larachat-offtopic:s:' . $sessionId,
             $ip ? 'larachat-offtopic:ip:' . $ip : null,
+        ]));
+    }
+
+    /** @return list<string> */
+    protected function noiseKeys(int $sessionId, ?string $ip): array
+    {
+        return array_values(array_filter([
+            'larachat-noise:s:' . $sessionId,
+            $ip ? 'larachat-noise:ip:' . $ip : null,
         ]));
     }
 

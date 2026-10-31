@@ -167,6 +167,9 @@ return [
         'strikes' => 3,
         // Off-topic messages before the visitor (conversation AND IP) is closed for a day.
         'off_topic' => 3,
+        // Empty messages in a row ("x", "???") before the same day-long close; any
+        // message with something in it starts the count again.
+        'noise' => 3,
         'ip_block_days' => 30,
         'history_tokens' => 4000,
         'recent_messages' => 4,
