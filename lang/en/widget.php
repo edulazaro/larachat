@@ -19,5 +19,9 @@ return [
     'form_send' => 'Send my details',
     'form_sending' => 'Sending…',
     'form_error' => 'Could not send them. Please try again.',
+    'form_name_required' => 'Please enter your name.',
+    'form_email_required' => 'Please enter your email.',
+    'form_email_invalid' => 'That email doesn\'t look right.',
+    'form_phone_invalid' => 'That phone number doesn\'t look right.',
     'nudge_contact' => 'Would you like :owner to get in touch? Leave your details.',
 ];

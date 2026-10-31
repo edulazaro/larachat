@@ -35,6 +35,7 @@ return [
     'form_privacy' => 'Només les fem servir per respondre\'t.',
     'form_privacy_link' => 'Privacitat',
     'form_name_required' => 'Escriu el teu nom.',
+    'form_name_invalid' => 'Escriu només lletres al nom.',
     'form_email_required' => 'Escriu el teu correu.',
     'form_email_invalid' => 'Aquest correu no sembla correcte.',
     'form_phone_invalid' => 'Aquest telèfon no sembla correcte.',

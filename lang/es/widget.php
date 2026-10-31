@@ -19,5 +19,9 @@ return [
     'form_send' => 'Enviar mis datos',
     'form_sending' => 'Enviando…',
     'form_error' => 'No se han podido enviar. Inténtalo de nuevo.',
+    'form_name_required' => 'Escribe tu nombre.',
+    'form_email_required' => 'Escribe tu email.',
+    'form_email_invalid' => 'Ese email no parece correcto.',
+    'form_phone_invalid' => 'Ese teléfono no parece correcto.',
     'nudge_contact' => '¿Quieres que :owner te escriba? Déjale tus datos.',
 ];

@@ -35,6 +35,7 @@ return [
     'form_privacy' => 'Nous ne les utilisons que pour vous répondre.',
     'form_privacy_link' => 'Confidentialité',
     'form_name_required' => 'Indiquez votre nom.',
+    'form_name_invalid' => 'Utilisez uniquement des lettres dans le nom.',
     'form_email_required' => 'Indiquez votre e-mail.',
     'form_email_invalid' => 'Cet e-mail ne semble pas correct.',
     'form_phone_invalid' => 'Ce numéro de téléphone ne semble pas correct.',

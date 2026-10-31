@@ -35,6 +35,7 @@ return [
     'form_privacy' => 'We only use them to reply to you.',
     'form_privacy_link' => 'Privacy policy',
     'form_name_required' => 'Please enter your name.',
+    'form_name_invalid' => 'Use letters only in the name.',
     'form_email_required' => 'Please enter your email.',
     'form_email_invalid' => 'That email doesn\'t look right.',
     'form_phone_invalid' => 'That phone number doesn\'t look right.',

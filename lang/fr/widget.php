@@ -19,5 +19,9 @@ return [
     'form_send' => 'Envoyer mes coordonnées',
     'form_sending' => 'Envoi…',
     'form_error' => 'Impossible de les envoyer. Réessayez.',
+    'form_name_required' => 'Indiquez votre nom.',
+    'form_email_required' => 'Indiquez votre e-mail.',
+    'form_email_invalid' => 'Cet e-mail ne semble pas correct.',
+    'form_phone_invalid' => 'Ce numéro de téléphone ne semble pas correct.',
     'nudge_contact' => 'Voulez-vous que :owner vous écrive ? Laissez vos coordonnées.',
 ];

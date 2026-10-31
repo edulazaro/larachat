@@ -19,5 +19,9 @@ return [
     'form_send' => 'Envia les meves dades',
     'form_sending' => 'Enviant…',
     'form_error' => 'No s\'han pogut enviar. Torna-ho a provar.',
+    'form_name_required' => 'Escriu el teu nom.',
+    'form_email_required' => 'Escriu el teu correu.',
+    'form_email_invalid' => 'Aquest correu no sembla correcte.',
+    'form_phone_invalid' => 'Aquest telèfon no sembla correcte.',
     'nudge_contact' => 'Vols que :owner t\'escrigui? Deixa-li les teves dades.',
 ];

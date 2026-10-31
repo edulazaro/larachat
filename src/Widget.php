@@ -45,6 +45,7 @@ class Widget
             'owner' => $persona->owner(),
             'site' => $persona->site(),
             'storageKey' => config('larachat.widget.storage_key', 'larachat_token'),
+            'required' => array_values((array) config('larachat.lead.required', ['name', 'email'])),
             'lockScroll' => (bool) config('larachat.widget.lock_scroll', false),
             'nudgeSeconds' => (int) config('larachat.widget.nudge_seconds', 5),
             'waitSeconds' => (int) config('larachat.limits.human_wait_seconds', 10),

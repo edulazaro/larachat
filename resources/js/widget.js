@@ -97,6 +97,26 @@
             add(m.sender === 'visitor' ? escapeHtml(m.message) : formatReply(m.message), m.sender, m.created_at);
         }
 
+        // Characters each form field may not hold, stripped as they are typed: letters for
+        // the name, what an address can contain for the email, digits and separators for the phone.
+        var ALLOWED = {
+            name: /[^\p{L}\p{M} .'\-]/gu,
+            email: /[^A-Za-z0-9._%+\-@]/g,
+            phone: /[^0-9+() .\-]/g
+        };
+        var required = cfg.required || ['name', 'email'];
+
+        // The same rules the server applies, checked before sending: [field, message] or null.
+        function check(d) {
+            if (required.indexOf('name') !== -1 && !d.name) return ['name', T.form_name_required || ''];
+            if (required.indexOf('email') !== -1 && !d.email) return ['email', T.form_email_required || ''];
+            if (d.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.email)) return ['email', T.form_email_invalid || ''];
+            var digits = d.phone.replace(/\D/g, '').length;
+            if (required.indexOf('phone') !== -1 && !d.phone) return ['phone', T.form_phone_invalid || ''];
+            if (d.phone && (digits < 7 || digits > 15)) return ['phone', T.form_phone_invalid || ''];
+            return null;
+        }
+
         function openForm() { return root.querySelector('[data-lc-form]'); }
         function removeForm() { var f = openForm(); if (f) f.remove(); }
 
@@ -114,9 +134,30 @@
             ['name', 'email', 'phone'].forEach(function (n) { var i = card.querySelector('[name="' + n + '"]'); if (i && !i.placeholder) i.placeholder = T['form_' + n] || ''; });
             var label = btn ? (btn.textContent.trim() || T.form_send || '') : '';
             if (btn) btn.textContent = label;
+            // What each field may hold is enforced while typing, not only when sending:
+            // characters that cannot belong there never appear.
+            Object.keys(ALLOWED).forEach(function (n) {
+                var i = card.querySelector('[name="' + n + '"]');
+                if (!i) return;
+                i.addEventListener('input', function () {
+                    var clean = i.value.replace(ALLOWED[n], '');
+                    if (clean !== i.value) {
+                        var at = i.selectionStart - (i.value.length - clean.length);
+                        i.value = clean;
+                        try { i.setSelectionRange(at, at); } catch (e) {}
+                    }
+                });
+            });
             var submit = function () {
                 var v = function (n) { var i = card.querySelector('[name="' + n + '"]'); return i ? i.value.trim() : ''; };
                 var payload = { token: token, name: v('name'), email: v('email'), phone: v('phone') };
+                var problem = check(payload);
+                if (problem) {
+                    if (err) err.textContent = problem[1];
+                    var bad = card.querySelector('[name="' + problem[0] + '"]');
+                    if (bad) bad.focus();
+                    return;
+                }
                 btn.disabled = true; btn.textContent = T.form_sending || label; if (err) err.textContent = '';
                 fetch(cfg.urls.contact, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(payload) })
                     .then(function (r) { return r.json().then(function (data) { return { status: r.status, data: data }; }); })

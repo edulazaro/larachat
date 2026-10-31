@@ -182,11 +182,14 @@ class ChatController extends Controller
         $rule = fn (string $field) => in_array($field, $required, true) ? 'required' : 'nullable';
 
         $data = Validator::make($request->only(['name', 'email', 'phone']), [
-            'name' => [$rule('name'), 'string', 'max:80'],
+            // Letters (any language), spaces, apostrophes, hyphens and dots; nothing else.
+            'name' => [$rule('name'), 'string', 'max:80', 'regex:/^[\p{L}\p{M}][\p{L}\p{M} .\'-]*$/u'],
             'email' => [$rule('email'), 'email', 'max:160'],
-            'phone' => [$rule('phone'), 'string', 'max:32', 'regex:/^\+?[0-9 ().-]{7,24}$/'],
+            // Digits with the usual separators, and 7 to 15 digits in all.
+            'phone' => [$rule('phone'), 'string', 'max:32', 'regex:/^(?=(?:\D*\d){7,15}\D*$)\+?[0-9 ().-]+$/'],
         ], [
             'name.required' => $persona->text('form_name_required', $locale),
+            'name.regex' => $persona->text('form_name_invalid', $locale),
             'email.required' => $persona->text('form_email_required', $locale),
             'email.email' => $persona->text('form_email_invalid', $locale),
             'phone.required' => $persona->text('form_phone_invalid', $locale),

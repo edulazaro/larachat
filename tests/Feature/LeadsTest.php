@@ -150,6 +150,21 @@ class LeadsTest extends TestCase
             ->assertSee(__('larachat::panel.form_shown'))->assertSee(__('larachat::panel.form_reason_price'));
     }
 
+    public function test_the_form_refuses_strange_characters(): void
+    {
+        config(['larachat.limits.switch_per_minute' => 100]);
+        $token = $this->startChat();
+        $send = fn (array $fields) => $this->postJson('/api/chat/contact', ['token' => $token] + $fields);
+
+        $send(['name' => 'Laura 123', 'email' => 'laura@acme.test'])->assertStatus(422)->assertJsonPath('errors.name.0', 'Escribe solo letras en el nombre.');
+        $send(['name' => '<script>', 'email' => 'laura@acme.test'])->assertStatus(422)->assertJsonPath('errors.name.0', 'Escribe solo letras en el nombre.');
+        $send(['name' => 'Laura', 'email' => 'laura@acme.test', 'phone' => 'sesenta'])->assertStatus(422)->assertJsonPath('errors.phone.0', 'Ese teléfono no parece correcto.');
+        $send(['name' => 'Laura', 'email' => 'laura@acme.test', 'phone' => '.......'])->assertStatus(422)->assertJsonPath('errors.phone.0', 'Ese teléfono no parece correcto.');
+        $send(['name' => 'Laura', 'email' => 'laura@acme.test', 'phone' => '600 11'])->assertStatus(422);
+
+        $send(['name' => "María-José O'Neill", 'email' => 'mj@acme.test', 'phone' => '+376 (600) 111-222'])->assertOk();
+    }
+
     public function test_prices_and_goodbyes_are_recognised_in_every_language(): void
     {
         $leads = app(Leads::class);

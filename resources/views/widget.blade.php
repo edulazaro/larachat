@@ -63,7 +63,7 @@
             <div class="lc-w-form-title" data-lc-slot="title"></div>
             <label>{{ $w::text('form_name') }}<input type="text" name="name" maxlength="80" autocomplete="name"></label>
             <label>{{ $w::text('form_email') }}<input type="email" name="email" maxlength="160" autocomplete="email" inputmode="email"></label>
-            <label>{{ $w::text('form_phone') }}<input type="tel" name="phone" maxlength="32" autocomplete="tel" inputmode="tel"></label>
+            <label>{{ $w::text('form_phone') }}<input type="tel" name="phone" maxlength="32" autocomplete="tel" inputmode="tel" pattern="[0-9+() .\-]*"></label>
             <div class="lc-w-form-error" data-lc-slot="error" role="alert"></div>
             <button type="button" data-lc="contact-send">{{ $w::text('form_send') }}</button>
             <div class="lc-w-form-privacy" data-lc-slot="privacy"></div>

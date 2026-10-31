@@ -60,7 +60,10 @@ It is placed when the visitor:
 
 At most `lead.max_forms` times per conversation (3), and never two at once: a new one replaces
 the one still empty. Each has a title that says why (*So Edu can send you a quote*). The form
-asks for the fields in `lead.required` (name and email) and an optional phone; sent, it
+asks for the fields in `lead.required` (name and email) and an optional phone. Characters that
+cannot belong in a field never appear in it (letters for the name, digits and separators for
+the phone, no spaces in the email), the format is checked before sending, and the server
+applies the same rules. Sent, it
 becomes the visitor's own message (*Here are my details: Laura · laura@acme.test*, kind
 `contact`, the values in its `meta`), the conversation keeps them, the bot thanks them by name
 and you get the lead alert.
