@@ -227,6 +227,20 @@ conversation either way. Only your chat is obeyed, and updates without the secre
 (there is no unprotected mode: without it, anyone who knew your chat id could reply to
 visitors as you).
 
+## No websockets, no queue
+
+Everything runs on the plain request cycle, so there is no Reverb, Pusher or queue worker
+to run:
+
+- The widget polls for new messages once a conversation exists: every 3 seconds, slowing to
+  10 and then 15 seconds while nothing arrives, and back to 3 as soon as something does. Each
+  poll asks only for messages after the last one it has, and is rate-limited
+  (`limits.poll_per_minute`).
+- The panel refreshes with `wire:poll` every 5 seconds, which is also the heartbeat the
+  availability switch reads.
+- The bot answers within the visitor's request; emails and Telegram messages go out after
+  the response has been sent.
+
 ## Testing
 
 ```bash
