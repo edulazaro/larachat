@@ -5,6 +5,7 @@ namespace EduLazaro\Larachat\Http\Controllers;
 use EduLazaro\Larachat\Chatbot;
 use EduLazaro\Larachat\Guard;
 use EduLazaro\Larachat\Larachat;
+use EduLazaro\Larachat\Leads;
 use EduLazaro\Larachat\Models\ChatSession;
 use EduLazaro\Larachat\Notifications\Notifier;
 use Illuminate\Http\JsonResponse;
@@ -12,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * The widget's API: open or restore a conversation, send a message, leave
@@ -19,6 +21,10 @@ use Illuminate\Support\Facades\RateLimiter;
  */
 class ChatController extends Controller
 {
+    public function __construct(protected Leads $leads)
+    {
+    }
+
     public function init(Request $request): JsonResponse
     {
         // Lenient: an unknown or malformed token just means a new conversation.
@@ -32,15 +38,12 @@ class ChatController extends Controller
         if ($token && strlen($token) === 48) {
             $session = ChatSession::where('session_token', $token)->first();
             if ($session) {
-                $messages = $session->messages()
-                    ->orderBy('created_at', 'asc')
-                    ->get(['id', 'sender', 'message', 'created_at']);
-
                 return response()->json([
                     'token' => $session->session_token,
-                    'messages' => $messages,
+                    'messages' => $this->present($session, $session->messages()->orderBy('id', 'asc')->get()),
                     'mode' => $session->mode,
                     'has_contact' => $session->hasContact(),
+                    'lead' => (bool) $session->qualified_at,
                 ]);
             }
         }
@@ -131,9 +134,18 @@ class ChatController extends Controller
                 ]);
 
                 $response['ai_reply'] = $result['reply'];
-                $response['ask_contact'] = (bool) ($result['ask_contact'] ?? false);
                 $response['ai_reply_id'] = $reply->id;
                 $response['ai_reply_at'] = $reply->created_at;
+
+                // The contact form, when this is one of the moments to ask for it.
+                if (empty($result['off_topic'])) {
+                    $form = ! empty($result['ask_contact'])
+                        ? $this->leads->place($session, 'handoff')
+                        : $this->leads->afterReply($session, $text, (bool) ($result['qualified'] ?? false));
+                    if ($form) {
+                        $response['form'] = $this->leads->present($form, $session);
+                    }
+                }
 
                 $notifier->exchange($session, $text, $result['reply'], (bool) ($result['qualified'] ?? false), $visitorMessageCount === 0);
             } elseif (Larachat::humanAvailable()) {
@@ -145,18 +157,90 @@ class ChatController extends Controller
         $session->refresh();
         $response['mode'] = $session->mode;
         $response['has_contact'] = $session->hasContact();
+        $response['lead'] = (bool) $session->qualified_at;
 
         return response()->json($response);
     }
 
-    /** Contact details left through the widget's form when nobody can answer. */
+    /**
+     * The contact form, filled in. The details become the visitor's own
+     * message (kind contact, values in meta), the conversation keeps them, the
+     * open form closes and the bot thanks them by name.
+     */
     public function contact(Request $request, Notifier $notifier): JsonResponse
+    {
+        $request->validate(['token' => 'required|string|size:48']);
+
+        $session = ChatSession::where('session_token', $request->input('token'))->first();
+        if (! $session) {
+            return response()->json(['error' => 'Session not found', 'code' => 'session_not_found'], 404);
+        }
+
+        $locale = $session->locale();
+        $persona = Larachat::persona();
+        $required = (array) config('larachat.lead.required', ['name', 'email']);
+        $rule = fn (string $field) => in_array($field, $required, true) ? 'required' : 'nullable';
+
+        $data = Validator::make($request->only(['name', 'email', 'phone']), [
+            'name' => [$rule('name'), 'string', 'max:80'],
+            'email' => [$rule('email'), 'email', 'max:160'],
+            'phone' => [$rule('phone'), 'string', 'max:32', 'regex:/^\+?[0-9 ().-]{7,24}$/'],
+        ], [
+            'name.required' => $persona->text('form_name_required', $locale),
+            'email.required' => $persona->text('form_email_required', $locale),
+            'email.email' => $persona->text('form_email_invalid', $locale),
+            'phone.required' => $persona->text('form_phone_invalid', $locale),
+            'phone.regex' => $persona->text('form_phone_invalid', $locale),
+        ])->validate();
+
+        $details = array_filter([
+            'name' => isset($data['name']) ? trim(strip_tags($data['name'])) : null,
+            'email' => isset($data['email']) ? mb_strtolower(trim($data['email'])) : null,
+            'phone' => isset($data['phone']) ? trim($data['phone']) : null,
+        ]);
+        if (! isset($details['email']) && ! isset($details['phone'])) {
+            return response()->json(['message' => $persona->text('form_email_required', $locale), 'errors' => ['email' => [$persona->text('form_email_required', $locale)]]], 422);
+        }
+
+        $hadContact = $session->hasContact();
+        $visitor = $this->leads->contactMessage($session, $details);
+        $session->update([
+            'visitor_name' => $details['name'] ?? $session->visitor_name,
+            'visitor_email' => $details['email'] ?? $session->visitor_email,
+            'visitor_phone' => $details['phone'] ?? $session->visitor_phone,
+            'last_message_at' => now(),
+        ]);
+        $this->leads->closeOpen($session);
+
+        $thanks = $session->messages()->create([
+            'sender' => 'assistant',
+            'message' => $persona->text((isset($details['email']) ? 'contact_thanks' : 'contact_thanks_phone') . (isset($details['name']) ? '' : '_unnamed'), $locale, [
+                'name' => isset($details['name']) ? explode(' ', $details['name'])[0] : '',
+                'email' => $details['email'] ?? '',
+                'phone' => $details['phone'] ?? '',
+            ]),
+        ]);
+
+        if (! $hadContact && $session->fresh()->hasContact()) {
+            $notifier->lead($session->fresh());
+        }
+
+        return response()->json([
+            'ok' => true,
+            'messages' => [$this->leads->present($visitor, $session), $this->leads->present($thanks, $session)],
+        ]);
+    }
+
+    /**
+     * A form asked for by the widget itself: the visitor closed the chat after
+     * showing interest (close), or asked for a person who has not answered
+     * within a few seconds (wait).
+     */
+    public function contactForm(Request $request): JsonResponse
     {
         $data = $request->validate([
             'token' => 'required|string|size:48',
-            'name' => 'nullable|string|max:80',
-            'email' => 'nullable|email|max:160|required_without:phone',
-            'phone' => ['nullable', 'string', 'max:32', 'regex:/^\+?[0-9 ().-]{7,24}$/', 'required_without:email'],
+            'reason' => 'required|in:close,wait',
         ]);
 
         $session = ChatSession::where('session_token', $data['token'])->first();
@@ -164,22 +248,10 @@ class ChatController extends Controller
             return response()->json(['error' => 'Session not found', 'code' => 'session_not_found'], 404);
         }
 
-        $hadContact = $session->hasContact();
-        $session->update(array_filter([
-            'visitor_name' => isset($data['name']) ? trim(strip_tags($data['name'])) : null,
-            'visitor_email' => isset($data['email']) ? mb_strtolower($data['email']) : null,
-            'visitor_phone' => $data['phone'] ?? null,
-        ]));
+        $allowed = $data['reason'] === 'close' ? (bool) $session->qualified_at : $session->mode === 'human';
+        $form = $allowed && ! $this->leads->open($session) ? $this->leads->place($session, $data['reason']) : null;
 
-        $thanks = Larachat::persona()->text('contact_thanks', $session->locale());
-        $message = $session->messages()->create(['sender' => 'assistant', 'message' => $thanks]);
-        $session->update(['last_message_at' => now()]);
-
-        if (! $hadContact && $session->fresh()->hasContact()) {
-            $notifier->lead($session->fresh());
-        }
-
-        return response()->json(['ok' => true, 'message' => $thanks, 'id' => $message->id, 'created_at' => $message->created_at]);
+        return response()->json(['form' => $form ? $this->leads->present($form, $session) : null]);
     }
 
     public function poll(Request $request): JsonResponse
@@ -201,7 +273,7 @@ class ChatController extends Controller
             $query->where('id', '>', $after);
         }
 
-        $messages = $query->get(['id', 'sender', 'message', 'created_at']);
+        $messages = $query->get();
 
         if ($messages->isNotEmpty()) {
             $session->messages()
@@ -214,8 +286,9 @@ class ChatController extends Controller
         }
 
         return response()->json([
-            'messages' => $messages,
+            'messages' => $this->present($session, $messages),
             'mode' => $session->mode,
+            'has_contact' => $session->hasContact(),
         ]);
     }
 
@@ -246,5 +319,24 @@ class ChatController extends Controller
                 'created_at' => $message->created_at,
             ],
         ]);
+    }
+
+    /**
+     * Messages as the widget gets them: forms that are closed (or no longer
+     * needed) are left out.
+     *
+     * @param  iterable<\EduLazaro\Larachat\Models\ChatMessage>  $messages
+     * @return list<array<string, mixed>>
+     */
+    protected function present(ChatSession $session, iterable $messages): array
+    {
+        $out = [];
+        foreach ($messages as $message) {
+            if ($item = $this->leads->present($message, $session)) {
+                $out[] = $item;
+            }
+        }
+
+        return $out;
     }
 }

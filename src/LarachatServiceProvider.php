@@ -121,6 +121,7 @@ class LarachatServiceProvider extends ServiceProvider
             Route::post('init', [ChatController::class, 'init'])->middleware('throttle:larachat-init')->name('larachat.init');
             Route::post('send', [ChatController::class, 'send'])->middleware('throttle:larachat-send')->name('larachat.send');
             Route::post('contact', [ChatController::class, 'contact'])->middleware('throttle:larachat-switch')->name('larachat.contact');
+            Route::post('contact-form', [ChatController::class, 'contactForm'])->middleware('throttle:larachat-switch')->name('larachat.contact_form');
             Route::get('poll', [ChatController::class, 'poll'])->middleware('throttle:larachat-poll')->name('larachat.poll');
             Route::post('switch-ai', [ChatController::class, 'switchToAi'])->middleware('throttle:larachat-switch')->name('larachat.switch');
         });

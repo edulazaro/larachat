@@ -11,13 +11,19 @@
  *   [data-lc="messages"]       where messages go; children with data-lc-static are kept on reset
  *   [data-lc="input"], [data-lc="send"]
  *   [data-lc="badge"]          unread count, .is-visible when there is one
- *   [data-lc="nudge"], [data-lc="nudge-close"]   the "need help?" bubble, .is-visible
+ *   [data-lc="nudge"], [data-lc="nudge-close"]   the "need help?" bubble, .is-visible;
+ *                              an optional [data-lc="nudge-text"] inside it takes other texts
  *   [data-lc="mode-bar"], [data-lc="mode-text"], [data-lc="mode-btn"], [data-lc="mode-btn-text"]
  *
  * and builds messages from <template data-lc-template="visitor|bot|admin|typing|contact">,
- * filling [data-lc-slot="text|time|sender"] (admin falls back to bot). The
- * contact template holds inputs named name, email and phone, a
- * [data-lc-slot="error"] and a [data-lc="contact-send"] button.
+ * filling [data-lc-slot="text|time|sender"] (admin falls back to bot).
+ *
+ * The contact template is the contact form, which the server places in the
+ * conversation as a message of its own when it is time to ask for the
+ * visitor's details: [data-lc-slot="title"], [data-lc-slot="privacy"],
+ * inputs named name, email and phone, a [data-lc-slot="error"] and a
+ * [data-lc="contact-send"] button. There is never more than one on screen,
+ * and it stays where it is until it is sent.
  *
  * It survives Livewire's wire:navigate: a root is set up once, polling stops
  * before a page swap, and a root that is still there (inside @persist) is not
@@ -39,14 +45,15 @@
         var el = {
             wrap: q('launcher-wrap'), launcher: q('launcher'), panel: q('panel'), close: q('close'),
             messages: q('messages'), input: q('input'), send: q('send'), badge: q('badge'),
-            nudge: q('nudge'), nudgeClose: q('nudge-close'), modeBar: q('mode-bar'),
+            nudge: q('nudge'), nudgeClose: q('nudge-close'), nudgeText: q('nudge-text'), modeBar: q('mode-bar'),
             modeText: q('mode-text'), modeBtn: q('mode-btn'), modeBtnText: q('mode-btn-text')
         };
         var storeKey = cfg.storageKey || 'larachat_token';
 
         var token = read(localStorage, storeKey), lastId = 0, pollTimer = null, sending = false,
             started = false, mode = 'ai', interval = 3000, idlePolls = 0, nudgeDismissed = false,
-            restored = false, hasContact = false, waitTimer = null, alive = true;
+            restored = false, hasContact = false, lead = false, waitTimer = null, alive = true,
+            shown = {};
 
         function read(store, key) { try { return store.getItem(key); } catch (e) { return null; } }
         function write(store, key, value) { try { value === null ? store.removeItem(key) : store.setItem(key, value); } catch (e) {} }
@@ -65,12 +72,10 @@
                 token = data.token; write(localStorage, storeKey, token);
                 if (data.mode) mode = data.mode;
                 if (data.has_contact) hasContact = true;
+                if (data.lead) lead = true;
                 if (data.messages && data.messages.length > 0) {
                     started = true;
-                    data.messages.forEach(function (m) {
-                        add(m.sender === 'visitor' ? escapeHtml(m.message) : formatReply(m.message), m.sender, m.created_at);
-                        if (m.id > lastId) lastId = m.id;
-                    });
+                    data.messages.forEach(show);
                     updateMode(); startPolling();
                 }
             }).catch(function (e) { console.error('Chat init failed:', e); });
@@ -82,45 +87,81 @@
         }
         function slot(node, name) { return node.matches && node.matches('[data-lc-slot="' + name + '"]') ? node : node.querySelector('[data-lc-slot="' + name + '"]'); }
 
-        // Nobody can answer now: ask for a way to reach the visitor instead of leaving them waiting.
-        function showContact() {
-            if (hasContact || !token || root.querySelector('[data-lc-contact]')) return;
+        // A message from the server, once: the reply to a send can also come back
+        // in a poll that crossed it, and showing it twice is what this prevents.
+        function show(m) {
+            if (!m || shown[m.id]) return;
+            shown[m.id] = true;
+            if (m.id > lastId) lastId = m.id;
+            if (m.kind === 'contact_form') { showForm(m); return; }
+            add(m.sender === 'visitor' ? escapeHtml(m.message) : formatReply(m.message), m.sender, m.created_at);
+        }
+
+        function openForm() { return root.querySelector('[data-lc-form]'); }
+        function removeForm() { var f = openForm(); if (f) f.remove(); }
+
+        // The contact form, placed by the server as a message of the conversation.
+        function showForm(form) {
+            if (hasContact) return;
             var card = fromTemplate('contact');
             if (!card) return;
-            card.setAttribute('data-lc-contact', '');
-            var text = slot(card, 'text'), err = slot(card, 'error'), btn = card.querySelector('[data-lc="contact-send"]');
-            if (text) text.textContent = T.unavailable || '';
-            ['name', 'email', 'phone'].forEach(function (n) { var i = card.querySelector('[name="' + n + '"]'); if (i && !i.placeholder) i.placeholder = T[n] || ''; });
-            if (btn && !btn.textContent.trim()) btn.textContent = T.send || '';
-            btn && btn.addEventListener('click', function () {
+            removeForm();
+            card.setAttribute('data-lc-form', form.id);
+            var title = slot(card, 'title'), privacy = slot(card, 'privacy'), err = slot(card, 'error'),
+                btn = card.querySelector('[data-lc="contact-send"]');
+            if (title) title.textContent = form.title || '';
+            if (privacy) privacy.innerHTML = form.privacy || '';
+            ['name', 'email', 'phone'].forEach(function (n) { var i = card.querySelector('[name="' + n + '"]'); if (i && !i.placeholder) i.placeholder = T['form_' + n] || ''; });
+            var label = btn ? (btn.textContent.trim() || T.form_send || '') : '';
+            if (btn) btn.textContent = label;
+            var submit = function () {
                 var v = function (n) { var i = card.querySelector('[name="' + n + '"]'); return i ? i.value.trim() : ''; };
-                var name = v('name'), email = v('email'), phone = v('phone');
-                if (!email && !phone) { if (err) err.textContent = T.need_one || ''; return; }
-                btn.disabled = true; if (err) err.textContent = '';
-                var payload = { token: token };
-                if (name) payload.name = name; if (email) payload.email = email; if (phone) payload.phone = phone;
-                post(cfg.urls.contact, payload).then(function (data) {
-                    btn.disabled = false;
-                    if (!data.ok) { if (err) err.textContent = T.error || ''; return; }
-                    hasContact = true; card.remove(); clearTimeout(waitTimer);
-                    add(formatReply(data.message), 'assistant', data.created_at);
-                    if (data.id > lastId) lastId = data.id;
-                }).catch(function () { btn.disabled = false; if (err) err.textContent = T.error || ''; });
-            });
+                var payload = { token: token, name: v('name'), email: v('email'), phone: v('phone') };
+                btn.disabled = true; btn.textContent = T.form_sending || label; if (err) err.textContent = '';
+                fetch(cfg.urls.contact, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(payload) })
+                    .then(function (r) { return r.json().then(function (data) { return { status: r.status, data: data }; }); })
+                    .then(function (res) {
+                        btn.disabled = false; btn.textContent = label;
+                        if (res.status === 422) {
+                            var errors = res.data.errors || {};
+                            var first = Object.keys(errors)[0];
+                            if (err) err.textContent = first ? errors[first][0] : (res.data.message || T.form_error || '');
+                            var field = first && card.querySelector('[name="' + first + '"]');
+                            if (field) field.focus();
+                            return;
+                        }
+                        if (!res.data.ok) { if (err) err.textContent = T.form_error || ''; return; }
+                        hasContact = true; card.remove(); clearTimeout(waitTimer);
+                        (res.data.messages || []).forEach(show);
+                    })
+                    .catch(function () { btn.disabled = false; btn.textContent = label; if (err) err.textContent = T.form_error || ''; });
+            };
+            btn && btn.addEventListener('click', submit);
+            card.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); submit(); } });
             el.messages.appendChild(card); scrollDown();
+        }
+
+        // Asks the server for a form the widget itself decides on: the visitor
+        // closed the chat after showing interest, or a person has not answered.
+        function requestForm(reason) {
+            if (hasContact || !token || openForm()) return Promise.resolve(null);
+            return post(cfg.urls.form, { token: token, reason: reason }).then(function (data) {
+                if (data && data.form) { show(data.form); return data.form; }
+                return null;
+            }).catch(function () { return null; });
         }
 
         function waitForHuman() {
             clearTimeout(waitTimer);
             if (mode !== 'human' || hasContact) return;
-            waitTimer = setTimeout(function () { if (mode === 'human') showContact(); }, (cfg.waitSeconds || 10) * 1000);
+            waitTimer = setTimeout(function () { if (mode === 'human') requestForm('wait'); }, (cfg.waitSeconds || 10) * 1000);
         }
 
         // The conversation was deleted from the panel: forget it and start from scratch.
         function reset() {
             stopPolling();
             write(localStorage, storeKey, null);
-            token = null; lastId = 0; mode = 'ai'; started = false; hasContact = false; clearTimeout(waitTimer);
+            token = null; lastId = 0; mode = 'ai'; started = false; hasContact = false; lead = false; shown = {}; clearTimeout(waitTimer);
             Array.prototype.slice.call(el.messages.children).forEach(function (c) { if (!c.hasAttribute('data-lc-static')) c.remove(); });
             updateMode();
         }
@@ -142,15 +183,14 @@
             return get(cfg.urls.poll + '?token=' + encodeURIComponent(token) + '&after=' + lastId).then(function (data) {
                 if (data.code === 'session_not_found') { reset(); return; }
                 if (data.mode && data.mode !== mode) { mode = data.mode; updateMode(); }
-                if (data.messages && data.messages.length > 0) {
-                    if (data.messages.some(function (m) { return m.sender === 'admin'; })) clearTimeout(waitTimer);
+                if (data.has_contact) { hasContact = true; removeForm(); }
+                var fresh = (data.messages || []).filter(function (m) { return !shown[m.id]; });
+                if (fresh.length > 0) {
+                    if (fresh.some(function (m) { return m.sender === 'admin'; })) clearTimeout(waitTimer);
                     interval = 3000; idlePolls = 0;
-                    data.messages.forEach(function (m) {
-                        add(formatReply(m.message), m.sender, m.created_at);
-                        if (m.id > lastId) lastId = m.id;
-                    });
+                    fresh.forEach(show);
                     if (!isOpen() && el.badge) {
-                        el.badge.textContent = parseInt(el.badge.textContent || '0', 10) + data.messages.length;
+                        el.badge.textContent = parseInt(el.badge.textContent || '0', 10) + fresh.length;
                         el.badge.classList.add('is-visible');
                     }
                 } else {
@@ -164,6 +204,11 @@
             if (isOpen()) {
                 el.panel.classList.remove('is-open'); root.classList.remove('lc-open');
                 if (cfg.lockScroll) document.body.style.overflow = '';
+                // Leaving after showing interest, without a way to be reached: the form
+                // waits in the conversation and the bubble says so.
+                if (lead && !hasContact) {
+                    requestForm('close').then(function (form) { if (form || openForm()) showNudge(T.nudge_contact, true); });
+                }
             } else {
                 if (!restored) { restored = true; init(); }
                 el.panel.classList.add('is-open'); root.classList.add('lc-open');
@@ -228,7 +273,7 @@
             el.modeBtn.disabled = true;
             post(cfg.urls.switch, { token: token }).then(function (data) {
                 if (data.mode) mode = data.mode;
-                if (data.message) { add(formatReply(data.message.message), data.message.sender, data.message.created_at); if (data.message.id > lastId) lastId = data.message.id; }
+                if (data.message) show(data.message);
                 updateMode(); el.modeBtn.disabled = false;
             }).catch(function () { el.modeBtn.disabled = false; });
         }
@@ -249,20 +294,27 @@
             }).then(function (data) {
                 sending = false; hideTyping();
                 if (data.error) { add(escapeHtml(data.error), 'assistant'); return; }
+                if (data.id) shown[data.id] = true;
                 if (data.mode) {
                     var prev = mode; mode = data.mode;
                     if (prev === 'ai' && mode === 'human' && !data.ai_reply) add(escapeHtml(T.transferring || ''), 'assistant');
                     updateMode();
                 }
-                if (data.ai_reply) { add(formatReply(data.ai_reply), 'assistant', data.ai_reply_at); if (data.ai_reply_id > lastId) lastId = data.ai_reply_id; }
-                if (data.has_contact) hasContact = true;
-                if (data.ask_contact) showContact();
+                if (data.ai_reply) show({ id: data.ai_reply_id, sender: 'assistant', message: data.ai_reply, created_at: data.ai_reply_at });
+                if (data.lead) lead = true;
+                if (data.has_contact) { hasContact = true; removeForm(); }
+                if (data.form) show(data.form);
                 waitForHuman();
                 startPolling();
             }).catch(function () { sending = false; hideTyping(); add(escapeHtml(T.send_error || 'Error'), 'assistant'); });
         }
 
-        function showNudge() { if (!el.nudge || nudgeDismissed || isOpen() || read(sessionStorage, storeKey + '_nudge') === '1') return; el.nudge.classList.add('is-visible'); }
+        function showNudge(text, always) {
+            if (!el.nudge || isOpen()) return;
+            if (!always && (nudgeDismissed || read(sessionStorage, storeKey + '_nudge') === '1')) return;
+            if (text && el.nudgeText) el.nudgeText.textContent = text;
+            el.nudge.classList.add('is-visible');
+        }
         function hideNudge() { el.nudge && el.nudge.classList.remove('is-visible'); }
         function dismissNudge() { nudgeDismissed = true; write(sessionStorage, storeKey + '_nudge', '1'); hideNudge(); }
 

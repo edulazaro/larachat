@@ -134,6 +134,8 @@ class Inbox extends Component
             ->when($this->filter === 'unread', fn ($q) => $q->whereHas('messages', $unread))
             ->when($this->filter === 'blocked', fn ($q) => $q->whereNotNull('blocked_at'))
             ->when($this->filter === 'leads', fn ($q) => $q->where(fn ($q) => $q->whereNotNull('visitor_email')->orWhereNotNull('visitor_phone')))
+            // The ones that got away: interest shown, no way to reach them.
+            ->when($this->filter === 'interested', fn ($q) => $q->whereNotNull('qualified_at')->whereNull('visitor_email')->whereNull('visitor_phone'))
             ->withCount(['messages as unread' => $unread])
             ->with('latestMessage')
             ->orderByDesc('last_message_at')

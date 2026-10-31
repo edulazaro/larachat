@@ -15,11 +15,7 @@ return [
 
     // When the visitor asks for a person and nobody is at the panel.
     'unavailable_with_contact' => 'Ahora mismo :owner no está disponible, pero ya tengo tus datos y te escribirá personalmente lo antes posible.',
-    'unavailable_ask_contact' => 'Ahora mismo :owner no está disponible. Déjame tu email o tu teléfono y lo que necesitas, y te responde personalmente lo antes posible.',
-    'keep_asking' => 'Para que :owner pueda responderte, déjame tu email o tu teléfono.',
-    'ask_contact' => 'Si quieres, déjame tu nombre y un email o teléfono y :owner te escribe. Solo los usamos para responderte.',
-    'ask_contact_privacy' => 'Si quieres, déjame tu nombre y un email o teléfono y :owner te escribe. Solo los usamos para responderte: :privacy',
-    'contact_thanks' => 'Gracias, ya tengo tus datos. :owner te escribirá personalmente lo antes posible.',
+    'unavailable_ask_contact' => 'Ahora mismo :owner no está disponible. Déjale tus datos aquí abajo y te escribirá personalmente lo antes posible.',
 
     // Mode changes and endings.
     'hello_again' => '¡Hola de nuevo! Soy :bot, ¿en qué te puedo ayudar?',
@@ -28,4 +24,25 @@ return [
     'closed_no_email' => 'Esta conversación ha finalizado.',
     'session_limit' => 'Hemos llegado al límite de mensajes de esta conversación. Escríbenos a :email y te respondemos personalmente.',
     'session_limit_no_email' => 'Hemos llegado al límite de mensajes de esta conversación.',
+
+    // The contact form: its title for each moment it appears, the privacy line and the errors.
+    'form_interest' => 'Para que :owner te escriba',
+    'form_price' => 'Para que :owner te envíe el presupuesto',
+    'form_goodbye' => 'Antes de irte: ¿dónde te escribe :owner?',
+    'form_close' => '¿Quieres que :owner te escriba?',
+    'form_handoff' => 'Déjale tus datos a :owner',
+    'form_wait' => ':owner no ha podido contestar todavía: déjale tus datos',
+    'form_privacy' => 'Solo los usamos para responderte.',
+    'form_privacy_link' => 'Privacidad',
+    'form_name_required' => 'Escribe tu nombre.',
+    'form_email_required' => 'Escribe tu email.',
+    'form_email_invalid' => 'Ese email no parece correcto.',
+    'form_phone_invalid' => 'Ese teléfono no parece correcto.',
+
+    // What the visitor's details read like in the conversation, and the thanks.
+    'contact_message' => 'Estos son mis datos: :details',
+    'contact_thanks' => 'Gracias, :name. :owner te escribirá a :email lo antes posible.',
+    'contact_thanks_unnamed' => 'Gracias. :owner te escribirá a :email lo antes posible.',
+    'contact_thanks_phone' => 'Gracias, :name. :owner te llamará al :phone lo antes posible.',
+    'contact_thanks_phone_unnamed' => 'Gracias. :owner te llamará al :phone lo antes posible.',
 ];

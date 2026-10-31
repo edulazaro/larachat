@@ -33,6 +33,9 @@ return new class extends Migration
                 $table->text('compressed_summary')->nullable();
                 $table->unsignedBigInteger('compressed_until_id')->nullable();
                 $table->timestamp('blocked_at')->nullable()->index();
+                // First sign of commercial interest, and how many contact forms were shown.
+                $table->timestamp('qualified_at')->nullable()->index();
+                $table->unsignedTinyInteger('contact_forms')->default(0);
                 $table->timestamps();
 
                 $table->index('visitor_ip');
@@ -47,6 +50,8 @@ return new class extends Migration
                 'compressed_summary' => fn (Blueprint $t) => $t->text('compressed_summary')->nullable(),
                 'compressed_until_id' => fn (Blueprint $t) => $t->unsignedBigInteger('compressed_until_id')->nullable(),
                 'blocked_at' => fn (Blueprint $t) => $t->timestamp('blocked_at')->nullable()->index(),
+                'qualified_at' => fn (Blueprint $t) => $t->timestamp('qualified_at')->nullable()->index(),
+                'contact_forms' => fn (Blueprint $t) => $t->unsignedTinyInteger('contact_forms')->default(0),
             ]);
         }
 
@@ -61,12 +66,18 @@ return new class extends Migration
                 $table->boolean('off_topic')->default(false);
                 // The URLs the reply was built from.
                 $table->json('sources')->nullable();
+                // null for a message; contact_form (a form the widget draws) or contact
+                // (the details the visitor sent through it), with their data in meta.
+                $table->string('kind', 20)->nullable();
+                $table->json('meta')->nullable();
                 $table->timestamps();
             });
         } else {
             $this->addMissing('larachat_messages', [
                 'off_topic' => fn (Blueprint $t) => $t->boolean('off_topic')->default(false),
                 'sources' => fn (Blueprint $t) => $t->json('sources')->nullable(),
+                'kind' => fn (Blueprint $t) => $t->string('kind', 20)->nullable(),
+                'meta' => fn (Blueprint $t) => $t->json('meta')->nullable(),
             ]);
         }
 

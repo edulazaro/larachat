@@ -135,8 +135,9 @@ class ChatApiTest extends TestCase
 
         $away = $this->say($this->startChat(), 'I want to talk to a person')->assertOk();
         $this->assertSame('ai', $away->json('mode'));
-        $this->assertTrue($away->json('ask_contact'));
         $this->assertSame(__('larachat::chat.unavailable_ask_contact', ['owner' => 'Edu'], 'en'), $away->json('ai_reply'));
+        $this->assertSame('contact_form', $away->json('form.kind'));
+        $this->assertSame(__('larachat::chat.form_handoff', ['owner' => 'Edu'], 'en'), $away->json('form.title'));
 
         $admin->forceFill(['is_available' => true, 'last_seen_at' => now()])->save();
         $here = $this->say($this->startChat(), 'I want to talk to a person')->assertOk();
@@ -156,30 +157,42 @@ class ChatApiTest extends TestCase
         $this->assertNull($session->visitor_phone);
     }
 
-    public function test_the_contact_request_is_added_once_with_the_privacy_link(): void
+    public function test_the_reply_never_asks_for_details_the_form_does(): void
     {
         $this->fakeOpenAi(['reply' => 'We can build that.', 'qualified' => true]);
         $token = $this->startChat();
 
-        $first = $this->say($token, 'We need a client portal for our firm')->json('ai_reply');
-        $second = $this->say($token, 'With e-signature too')->json('ai_reply');
+        $first = $this->say($token, 'We need a client portal for our firm');
+        $second = $this->say($token, 'With e-signature too');
 
-        $this->assertStringContainsString('https://acme.test/privacy', $first);
-        $this->assertSame('We can build that.', $second);
+        $this->assertSame('We can build that.', $first->json('ai_reply'));
+        $this->assertSame(__('larachat::chat.form_interest', ['owner' => 'Edu'], 'en'), $first->json('form.title'));
+        $this->assertStringContainsString('https://acme.test/privacy', $first->json('form.privacy'));
+        $this->assertSame('We can build that.', $second->json('ai_reply'));
+        $this->assertNull($second->json('form'), 'no new moment to ask: the form already shown stays');
     }
 
     public function test_contact_form_poll_and_back_to_the_bot(): void
     {
         $token = $this->startChat('/es');
 
-        $this->postJson('/api/chat/contact', ['token' => $token])->assertStatus(422);
+        $this->postJson('/api/chat/contact', ['token' => $token])->assertStatus(422)->assertJsonPath('errors.name.0', 'Escribe tu nombre.');
         $this->postJson('/api/chat/contact', ['token' => $token, 'name' => 'Ana', 'phone' => '+376 600 111'])
-            ->assertOk()->assertJsonPath('message', __('larachat::chat.contact_thanks', ['owner' => 'Edu'], 'es'));
-        $this->assertSame('Ana', ChatSession::first()->visitor_name);
+            ->assertStatus(422)->assertJsonPath('errors.email.0', 'Escribe tu email.');
+        $this->postJson('/api/chat/contact', ['token' => $token, 'name' => 'Ana', 'email' => 'ana@'])
+            ->assertStatus(422)->assertJsonPath('errors.email.0', 'Ese email no parece correcto.');
+
+        $sent = $this->postJson('/api/chat/contact', ['token' => $token, 'name' => 'Ana López', 'email' => 'Ana@Acme.test', 'phone' => '+376 600 111'])->assertOk();
+        $this->assertSame(['contact', null], array_column($sent->json('messages'), 'kind'));
+        $this->assertSame('Estos son mis datos: Ana López · ana@acme.test · +376 600 111', $sent->json('messages.0.message'));
+        $this->assertSame('Gracias, Ana. Edu te escribirá a ana@acme.test lo antes posible.', $sent->json('messages.1.message'));
+        $session = ChatSession::first();
+        $this->assertSame(['Ana López', 'ana@acme.test', '+376 600 111'], [$session->visitor_name, $session->visitor_email, $session->visitor_phone]);
+        $this->assertSame(['name' => 'Ana López', 'email' => 'ana@acme.test', 'phone' => '+376 600 111'], $session->messages()->where('kind', 'contact')->first()->meta);
 
         ChatSession::first()->messages()->create(['sender' => 'admin', 'message' => 'Hola Ana, soy Edu']);
         $poll = $this->getJson('/api/chat/poll?token=' . $token . '&after=0')->assertOk();
-        $this->assertSame(['Gracias, ya tengo tus datos. Edu te escribirá personalmente lo antes posible.', 'Hola Ana, soy Edu'], array_column($poll->json('messages'), 'message'));
+        $this->assertSame(['Gracias, Ana. Edu te escribirá a ana@acme.test lo antes posible.', 'Hola Ana, soy Edu'], array_column($poll->json('messages'), 'message'));
 
         ChatSession::first()->update(['mode' => 'human']);
         $this->postJson('/api/chat/switch-ai', ['token' => $token])->assertOk()

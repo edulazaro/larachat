@@ -16,18 +16,21 @@ class ChatSession extends Model
         'session_token', 'visitor_name', 'visitor_email', 'visitor_phone', 'visitor_ip',
         'visitor_page', 'telegram_chat_id', 'status', 'mode',
         'detected_locale', 'unread_count', 'last_message_at',
-        'compressed_summary', 'compressed_until_id', 'blocked_at',
+        'compressed_summary', 'compressed_until_id', 'blocked_at', 'qualified_at', 'contact_forms',
     ];
 
     protected $attributes = [
         'status' => 'open',
         'mode' => 'ai',
         'unread_count' => 0,
+        'contact_forms' => 0,
     ];
 
     protected $casts = [
         'last_message_at' => 'datetime',
         'blocked_at' => 'datetime',
+        'qualified_at' => 'datetime',
+        'contact_forms' => 'integer',
     ];
 
     public function messages(): HasMany
@@ -35,9 +38,13 @@ class ChatSession extends Model
         return $this->hasMany(ChatMessage::class);
     }
 
+    /** The last thing either side said: a contact form is not a message to preview. */
     public function latestMessage(): HasOne
     {
-        return $this->hasOne(ChatMessage::class)->latestOfMany();
+        return $this->hasOne(ChatMessage::class)->ofMany(
+            ['id' => 'max'],
+            fn ($query) => $query->where(fn ($q) => $q->whereNull('kind')->orWhere('kind', '!=', 'contact_form'))
+        );
     }
 
     public function hasContact(): bool

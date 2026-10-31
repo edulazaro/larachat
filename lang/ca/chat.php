@@ -15,11 +15,7 @@ return [
 
     // When the visitor asks for a person and nobody is at the panel.
     'unavailable_with_contact' => 'Ara mateix :owner no està disponible, però ja tinc les teves dades i t\'escriurà personalment tan aviat com pugui.',
-    'unavailable_ask_contact' => 'Ara mateix :owner no està disponible. Deixa\'m el teu correu o el teu telèfon i què necessites, i et respondrà personalment tan aviat com pugui.',
-    'keep_asking' => 'Perquè :owner et pugui respondre, deixa\'m el teu correu o el teu telèfon.',
-    'ask_contact' => 'Si vols, deixa\'m el teu nom i un correu o telèfon i :owner t\'escriurà. Només els fem servir per respondre\'t.',
-    'ask_contact_privacy' => 'Si vols, deixa\'m el teu nom i un correu o telèfon i :owner t\'escriurà. Només els fem servir per respondre\'t: :privacy',
-    'contact_thanks' => 'Gràcies, ja tinc les teves dades. :owner t\'escriurà personalment tan aviat com pugui.',
+    'unavailable_ask_contact' => 'Ara mateix :owner no està disponible. Deixa-li les teves dades aquí sota i t\'escriurà personalment tan aviat com pugui.',
 
     // Mode changes and endings.
     'hello_again' => 'Hola de nou! Soc :bot, en què et puc ajudar?',
@@ -28,4 +24,25 @@ return [
     'closed_no_email' => 'Aquesta conversa ha finalitzat.',
     'session_limit' => 'Hem arribat al límit de missatges d\'aquesta conversa. Escriu-nos a :email i et respondrem personalment.',
     'session_limit_no_email' => 'Hem arribat al límit de missatges d\'aquesta conversa.',
+
+    // The contact form: its title for each moment it appears, the privacy line and the errors.
+    'form_interest' => 'Perquè :owner t\'escrigui',
+    'form_price' => 'Perquè :owner t\'enviï el pressupost',
+    'form_goodbye' => 'Abans de marxar: on t\'escriu :owner?',
+    'form_close' => 'Vols que :owner t\'escrigui?',
+    'form_handoff' => 'Deixa les teves dades a :owner',
+    'form_wait' => ':owner encara no ha pogut respondre: deixa-li les teves dades',
+    'form_privacy' => 'Només les fem servir per respondre\'t.',
+    'form_privacy_link' => 'Privacitat',
+    'form_name_required' => 'Escriu el teu nom.',
+    'form_email_required' => 'Escriu el teu correu.',
+    'form_email_invalid' => 'Aquest correu no sembla correcte.',
+    'form_phone_invalid' => 'Aquest telèfon no sembla correcte.',
+
+    // What the visitor's details read like in the conversation, and the thanks.
+    'contact_message' => 'Aquestes són les meves dades: :details',
+    'contact_thanks' => 'Gràcies, :name. :owner t\'escriurà a :email tan aviat com pugui.',
+    'contact_thanks_unnamed' => 'Gràcies. :owner t\'escriurà a :email tan aviat com pugui.',
+    'contact_thanks_phone' => 'Gràcies, :name. :owner et trucarà al :phone tan aviat com pugui.',
+    'contact_thanks_phone_unnamed' => 'Gràcies. :owner et trucarà al :phone tan aviat com pugui.',
 ];

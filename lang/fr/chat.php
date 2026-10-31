@@ -15,11 +15,7 @@ return [
 
     // When the visitor asks for a person and nobody is at the panel.
     'unavailable_with_contact' => ':owner n\'est pas disponible pour le moment, mais j\'ai vos coordonnées et vous recevrez une réponse personnelle dès que possible.',
-    'unavailable_ask_contact' => ':owner n\'est pas disponible pour le moment. Laissez-moi votre e-mail ou votre téléphone et ce dont vous avez besoin, et vous recevrez une réponse personnelle dès que possible.',
-    'keep_asking' => 'Pour que :owner puisse vous répondre, laissez-moi votre e-mail ou votre téléphone.',
-    'ask_contact' => 'Si vous le souhaitez, laissez-moi votre nom et un e-mail ou un téléphone, et :owner vous écrira. Nous ne les utilisons que pour vous répondre.',
-    'ask_contact_privacy' => 'Si vous le souhaitez, laissez-moi votre nom et un e-mail ou un téléphone, et :owner vous écrira. Nous ne les utilisons que pour vous répondre : :privacy',
-    'contact_thanks' => 'Merci, j\'ai vos coordonnées. :owner vous écrira personnellement dès que possible.',
+    'unavailable_ask_contact' => ':owner n\'est pas disponible pour le moment. Laissez vos coordonnées ci-dessous et vous recevrez une réponse personnelle dès que possible.',
 
     // Mode changes and endings.
     'hello_again' => 'Re-bonjour ! Je suis :bot, comment puis-je vous aider ?',
@@ -28,4 +24,25 @@ return [
     'closed_no_email' => 'Cette conversation est terminée.',
     'session_limit' => 'Cette conversation a atteint sa limite de messages. Écrivez-nous à :email et nous vous répondrons personnellement.',
     'session_limit_no_email' => 'Cette conversation a atteint sa limite de messages.',
+
+    // The contact form: its title for each moment it appears, the privacy line and the errors.
+    'form_interest' => 'Pour que :owner vous écrive',
+    'form_price' => 'Pour que :owner vous envoie un devis',
+    'form_goodbye' => 'Avant de partir : où :owner peut vous écrire ?',
+    'form_close' => 'Voulez-vous que :owner vous écrive ?',
+    'form_handoff' => 'Laissez vos coordonnées à :owner',
+    'form_wait' => ':owner n\'a pas encore pu répondre : laissez vos coordonnées',
+    'form_privacy' => 'Nous ne les utilisons que pour vous répondre.',
+    'form_privacy_link' => 'Confidentialité',
+    'form_name_required' => 'Indiquez votre nom.',
+    'form_email_required' => 'Indiquez votre e-mail.',
+    'form_email_invalid' => 'Cet e-mail ne semble pas correct.',
+    'form_phone_invalid' => 'Ce numéro de téléphone ne semble pas correct.',
+
+    // What the visitor's details read like in the conversation, and the thanks.
+    'contact_message' => 'Voici mes coordonnées : :details',
+    'contact_thanks' => 'Merci, :name. :owner vous écrira à :email dès que possible.',
+    'contact_thanks_unnamed' => 'Merci. :owner vous écrira à :email dès que possible.',
+    'contact_thanks_phone' => 'Merci, :name. :owner vous appellera au :phone dès que possible.',
+    'contact_thanks_phone_unnamed' => 'Merci. :owner vous appellera au :phone dès que possible.',
 ];

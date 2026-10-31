@@ -9,7 +9,6 @@ use EduLazaro\Larachat\Support\OpenAi;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -125,12 +124,10 @@ class Chatbot
             $handoff = (bool) ($parsed['handoff'] ?? false);
             $qualified = (bool) ($parsed['qualified'] ?? false);
 
+            // Asking for the details is not the model's job: Leads places the
+            // contact form after the reply. This keeps what the visitor wrote.
             $askContact = false;
             $this->captureContact($session, $visitorMessage, $parsed);
-
-            if (! $handoff) {
-                $reply = $this->keepAskingForContact($session, $reply, $locale, $qualified);
-            }
 
             if ($handoff) {
                 if (Larachat::humanAvailable()) {
@@ -142,7 +139,6 @@ class Chatbot
                         $reply = $this->persona()->text('unavailable_with_contact', $locale);
                     } else {
                         $askContact = true;
-                        Cache::add('larachat-wants-human:' . $session->id, 0, now()->addDays(7));
                         $reply = $this->persona()->text('unavailable_ask_contact', $locale);
                     }
                 }
@@ -207,82 +203,15 @@ class Chatbot
         }
     }
 
-    /**
-     * Without a way to reach the visitor nobody can follow up, so the request
-     * for contact details is not left to the model: up to three times after the
-     * visitor asked for a person while nobody was there, otherwise once when
-     * the conversation turns commercial or reaches the visitor's third message.
-     */
-    protected function keepAskingForContact(ChatSession $session, string $reply, string $locale, bool $qualified): string
-    {
-        if ($session->hasContact()) {
-            return $reply;
-        }
-
-        $wantsKey = 'larachat-wants-human:' . $session->id;
-        if (Cache::has($wantsKey)) {
-            $asked = (int) Cache::get($wantsKey);
-            if ($asked >= 2) {
-                return $reply;
-            }
-            Cache::put($wantsKey, $asked + 1, now()->addDays(7));
-            if ($this->mentionsContact($reply)) {
-                return $reply;
-            }
-
-            return $reply . "\n\n" . $this->persona()->text('keep_asking', $locale);
-        }
-
-        $visitorMessages = $session->messages()->where('sender', 'visitor')->count();
-        if ($qualified || $visitorMessages >= 3) {
-            return $this->askForContact($session, $reply, $locale);
-        }
-
-        return $reply;
-    }
-
-    protected function askForContact(ChatSession $session, string $reply, string $locale): string
-    {
-        $key = 'larachat-contact-asked:' . $session->id;
-        if ($session->hasContact() || Cache::has($key)) {
-            return $reply;
-        }
-
-        Cache::put($key, true, now()->addDays(7));
-
-        if ($this->mentionsContact($reply, withDetails: true)) {
-            return $reply;
-        }
-
-        $privacy = $this->persona()->privacyUrl($locale);
-
-        return $reply . "\n\n" . ($privacy
-            ? $this->persona()->text('ask_contact_privacy', $locale, ['privacy' => $privacy])
-            : $this->persona()->text('ask_contact', $locale));
-    }
-
-    protected function mentionsContact(string $reply, bool $withDetails = false): bool
-    {
-        $words = 'e-?mail|correo|correu|tel[eé]fono|tel[eè]fon|t[eé]l[eé]phone|phone';
-        if ($withDetails) {
-            $words .= '|contacto|contacte|contact details|coordonn[eé]es';
-        }
-
-        return (bool) preg_match('/' . $words . '/iu', $reply);
-    }
-
     protected function contactStatus(ChatSession $session, string $locale): string
     {
-        $privacy = $this->persona()->privacyUrl($locale);
         $known = array_filter([
             'name' => $session->visitor_name,
             'email' => $session->visitor_email,
             'phone' => $session->visitor_phone,
         ]);
 
-        return 'VISITOR CONTACT DETAILS ALREADY GIVEN: ' . ($known ? json_encode($known, JSON_UNESCAPED_UNICODE) : 'none')
-            . ($session->hasContact() ? "\nYou already have a way to contact them: do NOT ask for contact details again." : '')
-            . ($privacy ? "\nPrivacy policy URL to cite when asking for details: {$privacy}" : '');
+        return 'VISITOR CONTACT DETAILS ALREADY GIVEN: ' . ($known ? json_encode($known, JSON_UNESCAPED_UNICODE) : 'none');
     }
 
     /** @return array{reply: string, handoff: bool, qualified: bool, off_topic: bool} */
@@ -408,8 +337,10 @@ class Chatbot
         $maxHistoryTokens = (int) config('larachat.limits.history_tokens', 4000);
         $recentMin = (int) config('larachat.limits.recent_messages', 4);
 
+        // Contact forms are messages of the conversation, but not something either side said.
         $allMessages = $session->messages()
             ->whereIn('sender', ['visitor', 'assistant', 'admin'])
+            ->where(fn ($q) => $q->whereNull('kind')->orWhere('kind', '!=', Leads::FORM))
             ->orderBy('id', 'asc')
             ->get(['id', 'sender', 'message']);
 
@@ -541,12 +472,11 @@ class Chatbot
 
         return <<<PROMPT
 LEAD CAPTURE (contact details):
-- Never ask for contact details in your first reply or while the visitor is only browsing or chatting casually.
-- As soon as the visitor shows real commercial intent (describes a project, asks for a quote or proposal, mentions their company or role), answer usefully and, in that same reply, ask ONCE, naturally, for their name and an email or phone number so {$owner} can get back to them. Say briefly what it is for and include the privacy policy URL given in the contact details system message, if there is one.
-- Ask for name plus ONE contact channel (email or phone, their choice). Never demand both.
-- If they decline or ignore it, keep helping normally and do not ask again in this conversation.
-- If contact details are already known (see the system message), never ask again; you may use their first name.
-- When they give details, thank them in one short sentence and confirm {$owner} will get in touch.
+- Never ask for the visitor's name, email or phone in your reply. When it is the moment, the chat shows a contact form right below your reply on its own; asking in the text as well only repeats it.
+- Set "qualified" honestly: it is what decides when that form appears.
+- When the visitor asks about prices, budgets or timelines, never give figures: say {$owner} prepares a concrete quote once the scope is clear, and ask at most one short question about the scope.
+- If contact details are already known (see the system message), you may use their first name.
+- If the visitor writes their details in the message anyway, thank them in one short sentence and confirm {$owner} will get in touch.
 PROMPT;
     }
 

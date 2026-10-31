@@ -43,14 +43,11 @@ class Notifier
             return;
         }
 
+        // The first sign of interest has its own alert (interested()), sent once.
         $body = "\n\n👤 " . Telegram::e($visitorMessage) . "\n🤖 " . Telegram::e($reply);
         $this->telegram($session, ($first
             ? $this->t('tg_new', ['id' => $session->id]) . $this->where($session)
             : $this->t('tg_chat', ['id' => $session->id])) . $body, 'human');
-
-        if ($qualified) {
-            $this->telegram($session, $this->t('tg_qualified', ['id' => $session->id]) . $body, 'human');
-        }
     }
 
     /** The visitor asked for a person and the conversation is now yours. */
@@ -75,6 +72,23 @@ class Notifier
 
         $this->telegram($session, $this->t('tg_chat', ['id' => $session->id]) . $this->where($session) . "\n\n"
             . ($lines !== '' ? $lines . "\n" : '') . '👤 ' . Telegram::e($visitorMessage) . ' ' . $this->t('tg_new_marker'), 'ai');
+    }
+
+    /**
+     * The first sign of real interest in a conversation that has no contact
+     * details yet: the owner can step in while the visitor is still there.
+     */
+    public function interested(ChatSession $session, string $visitorMessage): void
+    {
+        $this->mail($session, $this->t('mail_interested_subject', ['id' => $session->id]), [
+            $this->t('mail_interested_intro'),
+            '',
+            $this->t('mail_last') . ': ' . $visitorMessage,
+            $this->t('mail_page') . ': ' . ($session->visitor_page ?: '-'),
+        ]);
+
+        $this->telegram($session, $this->t('tg_qualified', ['id' => $session->id]) . $this->where($session)
+            . "\n\n👤 " . Telegram::e($visitorMessage), 'human');
     }
 
     /** The visitor left a way to reach them. */

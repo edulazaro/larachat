@@ -36,6 +36,7 @@ class Widget
                 'init' => route('larachat.init', [], false),
                 'send' => route('larachat.send', [], false),
                 'contact' => route('larachat.contact', [], false),
+                'form' => route('larachat.contact_form', [], false),
                 'poll' => route('larachat.poll', [], false),
                 'switch' => route('larachat.switch', [], false),
             ],

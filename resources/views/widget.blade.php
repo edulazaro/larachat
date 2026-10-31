@@ -13,7 +13,7 @@
     </button>
 
     <div class="lc-w-nudge" data-lc="nudge">
-        {{ $w::text('nudge') }} <span class="lc-w-nudge-close" data-lc="nudge-close">&times;</span>
+        <span data-lc="nudge-text">{{ $w::text('nudge') }}</span> <span class="lc-w-nudge-close" data-lc="nudge-close">&times;</span>
     </div>
 
     <div class="lc-w-panel" data-lc="panel" role="dialog" aria-label="{{ \EduLazaro\Larachat\Larachat::persona()->site() }}">
@@ -57,14 +57,16 @@
     <template data-lc-template="typing">
         <div class="lc-w-row lc-w-row--bot"><div class="lc-w-typing"><span></span><span></span><span></span></div></div>
     </template>
+    {{-- The contact form, placed in the conversation by the server: the title says why. --}}
     <template data-lc-template="contact">
-        <div class="lc-w-contact">
-            <p data-lc-slot="text"></p>
-            <input type="text" name="name" maxlength="80" autocomplete="name">
-            <input type="email" name="email" maxlength="160" autocomplete="email">
-            <input type="tel" name="phone" maxlength="32" autocomplete="tel">
-            <div class="lc-w-contact-error" data-lc-slot="error"></div>
-            <button type="button" data-lc="contact-send"></button>
+        <div class="lc-w-form">
+            <div class="lc-w-form-title" data-lc-slot="title"></div>
+            <label>{{ $w::text('form_name') }}<input type="text" name="name" maxlength="80" autocomplete="name"></label>
+            <label>{{ $w::text('form_email') }}<input type="email" name="email" maxlength="160" autocomplete="email" inputmode="email"></label>
+            <label>{{ $w::text('form_phone') }}<input type="tel" name="phone" maxlength="32" autocomplete="tel" inputmode="tel"></label>
+            <div class="lc-w-form-error" data-lc-slot="error" role="alert"></div>
+            <button type="button" data-lc="contact-send">{{ $w::text('form_send') }}</button>
+            <div class="lc-w-form-privacy" data-lc-slot="privacy"></div>
         </div>
     </template>
 </div>

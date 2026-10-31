@@ -38,9 +38,36 @@ bot is (a persona) and how the widget looks.
    fixed part of the prompt (your persona, the rules, the site map) sits behind a prompt-cache
    breakpoint, so after the first message in 30 minutes it is read at a twentieth of the price.
 5. **After the reply.** Unsafe replies (code, quoted prompt sections) are replaced and count as
-   a strike. Contact details are kept only if valid AND literally in what the visitor wrote.
-   The request for contact details is added by the package, not left to the model. A handoff
-   goes to you only if you are at the panel; otherwise the bot asks how to reach the visitor.
+   a strike. Contact details written in a message are kept only if valid AND literally in what
+   the visitor wrote. A handoff goes to you only if you are at the panel; otherwise the visitor
+   gets the contact form.
+
+## Getting the visitor's details
+
+The model never asks for them. A line of text asking once is easy to ignore, and a visitor
+who asks for a price and says goodbye leaves with nothing. The package decides, in code, when
+to ask, and asks with a **contact form placed in the conversation**: a message of its own
+(`kind` `contact_form`) that the widget draws as a form, which stays where it is until it is
+filled and survives a reload.
+
+It is placed when the visitor:
+
+- shows real interest (the model's `qualified`), the first time;
+- asks about prices, budgets or timelines (in English, Spanish, Catalan or French);
+- says goodbye after showing interest;
+- closes the chat after showing interest (the bubble then invites them to leave their details);
+- asks for a person who is not at the panel, or who has not answered within a few seconds.
+
+At most `lead.max_forms` times per conversation (3), and never two at once: a new one replaces
+the one still empty. Each has a title that says why (*So Edu can send you a quote*). The form
+asks for the fields in `lead.required` (name and email) and an optional phone; sent, it
+becomes the visitor's own message (*Here are my details: Laura · laura@acme.test*, kind
+`contact`, the values in its `meta`), the conversation keeps them, the bot thanks them by name
+and you get the lead alert.
+
+The first sign of interest also sends you an alert while the visitor is still there, and the
+panel's *Interested, no details* filter lists the conversations that showed interest and left
+no way to reach them.
 
 If OpenAI or the store fails, the reply falls back to the persona's fallback knowledge, so the
 chat never goes silent. Long conversations are summarised by the cheap model.
@@ -57,7 +84,8 @@ php artisan larachat:admin you@example.com
 
 The migration creates `larachat_sessions` and `larachat_messages`, or completes them if they
 already exist, and adds `is_available` and `last_seen_at` to `users`. It never changes
-existing data.
+existing data, so after an upgrade that adds columns you publish it again and migrate: it only
+adds what is missing.
 
 Moving a site whose chat larachat was extracted from (tables `chat_sessions` and
 `chat_messages`)? Rename them in a migration of your own dated before larachat's, and the
@@ -104,6 +132,7 @@ Everything lives in `config/larachat.php`; the only environment variables are th
 | `admins` | The emails allowed into the panel, whatever other users exist |
 | `knowledge.driver` | `json` (no server) or `meilisearch` |
 | `knowledge.base_url`, `knowledge.content`, `knowledge.drop` | Your public URL, the element that holds each page's content, what to remove inside it |
+| `lead.max_forms`, `lead.required` | How many contact forms per conversation (3) and the fields they require (name, email) |
 | `notifications` | Email to send alerts to; Telegram on or off |
 | `widget.storage_key` | Where the browser keeps the visitor's token (keep the old key when moving a site) |
 
@@ -193,16 +222,19 @@ and structure are yours.
     <template data-lc-template="bot"><div class="bot"><b data-lc-slot="sender">Ada</b> <span data-lc-slot="text"></span></div></template>
     <template data-lc-template="admin"><div class="owner"><b data-lc-slot="sender"></b> <span data-lc-slot="text"></span></div></template>
     <template data-lc-template="typing"><div class="typing">…</div></template>
-    <template data-lc-template="contact">
-        <div><p data-lc-slot="text"></p><input name="name"><input name="email"><input name="phone">
-        <div data-lc-slot="error"></div><button data-lc="contact-send"></button></div>
+    <template data-lc-template="contact">                 {{-- the contact form --}}
+        <div><b data-lc-slot="title"></b>
+            <input name="name"><input name="email"><input name="phone">
+            <div data-lc-slot="error"></div><button data-lc="contact-send">Send</button>
+            <small data-lc-slot="privacy"></small></div>
     </template>
 </div>
 {!! \EduLazaro\Larachat\Widget::script() !!}
 ```
 
 Optional hooks: `launcher-wrap`, `nudge` and `nudge-close` (a "need help?" bubble, shown with
-`.is-visible`). The badge gets `.is-visible` when there are unread replies. The script and the
+`.is-visible`), and `nudge-text` inside the bubble, which takes the invitation to leave details
+when an interested visitor closes the chat. The badge gets `.is-visible` when there are unread replies. The script and the
 default styles are served by the package with a versioned URL, so an update reaches the site
 without publishing anything (or from `public/vendor/larachat` when they are published, see
 Install). It survives `wire:navigate`; wrap the widget in `@persist('larachat')`
@@ -233,7 +265,8 @@ If you forget the password, run `php artisan larachat:admin you@example.com` aga
 
 ## Alerts
 
-**Email** (`notifications.mail.to`): one message per new conversation and one per lead, sent
+**Email** (`notifications.mail.to`): one message per new conversation, one when a visitor
+first shows interest and has left no details yet (so you can step in), and one per lead, sent
 after the response.
 
 **Telegram**: set `enabled`, the bot token, your chat id and a webhook secret, then

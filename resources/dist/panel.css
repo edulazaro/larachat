@@ -270,6 +270,7 @@
 .lc-tag--unread { background: var(--lc-accent); color: #fff; }
 .lc-tag--blocked { background: rgba(239, 68, 68, 0.16); color: #fca5a5; }
 .lc-tag--lead { background: rgba(16, 185, 129, 0.16); color: #6ee7b7; }
+.lc-tag--interested { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
 
 .lc-empty { padding: 2rem 1rem; color: var(--lc-muted); text-align: center; }
 
@@ -319,6 +320,10 @@
 .lc-msg--assistant { align-self: flex-end; background: rgba(148, 163, 184, 0.12); color: #cbd5e1; }
 .lc-msg--admin { align-self: flex-end; background: var(--lc-accent); color: #fff; }
 .lc-msg--offtopic { border-color: rgba(245, 158, 11, 0.45); }
+.lc-msg--contact { border-color: rgba(16, 185, 129, 0.55); background: rgba(16, 185, 129, 0.08); }
+
+/* A contact form shown to the visitor: an event of the conversation, not a message. */
+.lc-msg-event { align-self: center; padding: 0.2rem 0.75rem; border-radius: 999px; background: rgba(148, 163, 184, 0.1); color: var(--lc-muted); font-size: 0.75rem; }
 
 .lc-offtopic {
     display: inline-block;

@@ -10,7 +10,7 @@
         </div>
         <div class="lc-filters">
             <select class="lc-select" wire:model.live="filter" aria-label="{{ __('larachat::panel.filter') }}">
-                @foreach (['all', 'unread', 'leads', 'human', 'blocked'] as $key)
+                @foreach (['all', 'unread', 'leads', 'interested', 'human', 'blocked'] as $key)
                     <option value="{{ $key }}">{{ __('larachat::panel.filter_' . $key) }}</option>
                 @endforeach
             </select>
@@ -26,7 +26,7 @@
                     <div class="lc-item-preview">{{ \Illuminate\Support\Str::limit($s->latestMessage?->message, 90) }}</div>
                     <div class="lc-tags">
                         <span class="lc-tag">{{ $s->locale() }}</span>
-                        @if ($s->hasContact()) <span class="lc-tag lc-tag--lead">{{ __('larachat::panel.tag_lead') }}</span> @endif
+                        @if ($s->hasContact()) <span class="lc-tag lc-tag--lead">{{ __('larachat::panel.tag_lead') }}</span> @elseif ($s->qualified_at) <span class="lc-tag lc-tag--interested">{{ __('larachat::panel.tag_interested') }}</span> @endif
                         @if ($s->unread > 0) <span class="lc-tag lc-tag--unread">{{ trans_choice('larachat::panel.tag_new', $s->unread, ['count' => $s->unread]) }}</span> @endif
                         @if ($s->blocked_at) <span class="lc-tag lc-tag--blocked">{{ __('larachat::panel.tag_blocked') }}</span>
                         @elseif ($s->mode === 'human') <span class="lc-tag lc-tag--human">{{ __('larachat::panel.tag_human') }}</span> @endif
@@ -71,7 +71,11 @@
 
             <div class="lc-msgs" x-data x-init="$el.scrollTop = $el.scrollHeight; new MutationObserver(() => $el.scrollTop = $el.scrollHeight).observe($el, { childList: true })">
                 @foreach ($messages as $m)
-                    <div wire:key="m-{{ $m->id }}" class="lc-msg lc-msg--{{ $m->sender }}{{ $m->off_topic ? ' lc-msg--offtopic' : '' }}">@if($m->off_topic)<span class="lc-offtopic">{{ __('larachat::panel.off_topic') }}</span>
+                    @if ($m->kind === \EduLazaro\Larachat\Leads::FORM)
+                        <div wire:key="m-{{ $m->id }}" class="lc-msg-event">📋 {{ __('larachat::panel.form_shown') }} · {{ __('larachat::panel.form_reason_' . ($m->meta['reason'] ?? 'interest')) }} · {{ $m->created_at->format('d/m H:i') }}</div>
+                        @continue
+                    @endif
+                    <div wire:key="m-{{ $m->id }}" class="lc-msg lc-msg--{{ $m->sender }}{{ $m->off_topic ? ' lc-msg--offtopic' : '' }}{{ $m->kind === \EduLazaro\Larachat\Leads::CONTACT ? ' lc-msg--contact' : '' }}">@if($m->off_topic)<span class="lc-offtopic">{{ __('larachat::panel.off_topic') }}</span>
 @endif{{ $m->message }}<small>{{ __('larachat::panel.sender_' . $m->sender) }} · {{ $m->created_at->format('d/m H:i') }}</small></div>
                 @endforeach
             </div>

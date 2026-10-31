@@ -37,7 +37,7 @@ class LarachatTest extends TestCase
 
         $this->assertStringNotContainsString('@', $persona->text('closed', 'es'));
         $this->assertSame('Esta conversación ha finalizado.', $persona->text('closed', 'es'));
-        $this->assertStringContainsString('Edu', $persona->text('keep_asking', 'ca'));
+        $this->assertStringContainsString('Edu', $persona->text('form_price', 'ca'));
     }
 
     public function test_admins_are_only_the_configured_emails(): void

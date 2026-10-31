@@ -179,6 +179,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Leads
+    |--------------------------------------------------------------------------
+    |
+    | The chat asks for the visitor's details with a form placed in the
+    | conversation when they show real interest, ask about prices or timelines,
+    | say goodbye, close the chat, or want a person who is not there.
+    |
+    */
+
+    'lead' => [
+        // Forms per conversation, at most; a new one replaces one still empty.
+        'max_forms' => 3,
+        // Fields the form requires. The phone is optional unless listed here.
+        'required' => ['name', 'email'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Notifications
     |--------------------------------------------------------------------------
     |

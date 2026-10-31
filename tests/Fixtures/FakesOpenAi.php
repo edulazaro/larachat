@@ -15,13 +15,17 @@ trait FakesOpenAi
      * The scope filter, the embedding and the reply, told apart by endpoint and
      * by the scope call's 20-token limit.
      *
-     * @param  array<string, mixed>  $reply  the JSON the main model answers with
+     * @param  array<string, mixed>|list<array<string, mixed>>  $reply  the JSON the main model answers
+     *         with, or one per turn in order (the last one repeats)
      */
     protected function fakeOpenAi(array $reply = [], bool $onTopic = true, array $vector = [1, 0, 0], int $status = 200): void
     {
-        $reply += ['reply' => 'Hello from the bot', 'handoff' => false, 'qualified' => false, 'visitor_name' => null, 'visitor_email' => null, 'visitor_phone' => null];
+        $defaults = ['reply' => 'Hello from the bot', 'handoff' => false, 'qualified' => false, 'visitor_name' => null, 'visitor_email' => null, 'visitor_phone' => null];
+        $turns = $reply !== [] && array_is_list($reply) ? $reply : [$reply];
+        $turns = array_map(fn ($turn) => $turn + $defaults, $turns);
+        $next = 0;
 
-        Http::fake(function (Request $request) use ($reply, $onTopic, $vector, $status) {
+        Http::fake(function (Request $request) use (&$next, $turns, $onTopic, $vector, $status) {
             if ($request->url() === OpenAi::EMBEDDINGS_URL) {
                 $inputs = (array) $request->data()['input'];
 
@@ -32,6 +36,7 @@ trait FakesOpenAi
                 $body = $request->data();
                 $step = ($body['max_completion_tokens'] ?? null) === 20 ? 'scope' : 'reply';
                 $this->sent[] = ['step' => $step, 'body' => $body];
+                $reply = $turns[min($step === 'reply' ? $next++ : $next, count($turns) - 1)];
 
                 return $step === 'scope'
                     ? Http::response(['choices' => [['message' => ['content' => json_encode(['on_topic' => $onTopic])]]]])

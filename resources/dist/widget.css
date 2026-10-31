@@ -89,15 +89,20 @@
 .lc-w-typing span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes lc-w-dot { 0%, 60%, 100% { transform: none; opacity: 0.4; } 30% { transform: translateY(-5px); opacity: 1; } }
 
-.lc-w-contact {
-    display: flex; flex-direction: column; gap: 8px; padding: 12px; max-width: 320px;
-    border: 1px solid var(--lc-w-line); border-radius: 12px; background: var(--lc-w-bg);
+.lc-w-form {
+    display: flex; flex-direction: column; gap: 10px; width: 100%; padding: 14px;
+    border: 1px solid var(--lc-w-line); border-left: 3px solid var(--lc-w-accent); border-radius: 12px; background: var(--lc-w-bg);
 }
-.lc-w-contact p { margin: 0 0 2px; font-size: 13px; line-height: 1.45; }
-.lc-w-contact input { width: 100%; padding: 8px 10px; border: 1px solid var(--lc-w-line); border-radius: 8px; font: inherit; font-size: 13px; }
-.lc-w-contact-error { font-size: 12px; color: #dc2626; }
-.lc-w-contact button { padding: 9px 12px; border: 0; border-radius: 8px; background: var(--lc-w-accent); color: var(--lc-w-accent-text); font-weight: 600; cursor: pointer; }
-.lc-w-contact button:disabled { opacity: 0.6; cursor: wait; }
+.lc-w-form-title { font-size: 14px; font-weight: 700; }
+.lc-w-form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--lc-w-muted); }
+.lc-w-form input { width: 100%; padding: 9px 10px; border: 1px solid var(--lc-w-line); border-radius: 8px; font: inherit; font-size: 14px; color: var(--lc-w-text); }
+.lc-w-form input:focus { outline: none; border-color: var(--lc-w-accent); }
+.lc-w-form-error { font-size: 12px; color: #dc2626; }
+.lc-w-form-error:empty { display: none; }
+.lc-w-form button { padding: 10px 12px; border: 0; border-radius: 8px; background: var(--lc-w-accent); color: var(--lc-w-accent-text); font-weight: 600; cursor: pointer; }
+.lc-w-form button:disabled { opacity: 0.6; cursor: wait; }
+.lc-w-form-privacy { font-size: 11px; color: var(--lc-w-muted); }
+.lc-w-form-privacy a { color: inherit; text-decoration: underline; }
 
 .lc-w-foot { border-top: 1px solid var(--lc-w-line); }
 .lc-w-mode { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 14px 0; font-size: 12px; }
