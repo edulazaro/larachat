@@ -88,6 +88,8 @@ class LarachatServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__ . '/../resources/views/widget.blade.php' => resource_path('views/vendor/larachat/widget.blade.php'),
             ], 'larachat-widget');
+
+            $this->publishes(AssetController::publishable(), 'larachat-assets');
         }
     }
 

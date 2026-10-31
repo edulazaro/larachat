@@ -10,9 +10,16 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  * script) straight from vendor/, so an update of the package reaches the site
  * without publishing anything. URLs carry ?v=<mtime>, so they are cached for a
  * year and a new version is a new URL.
+ *
+ * Where the web server answers .js and .css requests itself (nginx in front of
+ * PHP often does), a file that is not on disk gets the server's own 404 and the
+ * request never reaches this route. Those sites publish the files to
+ * public/vendor/larachat (--tag=larachat-assets) and url() uses that copy.
  */
 class AssetController extends Controller
 {
+    public const PUBLISHED = 'vendor/larachat';
+
     protected const FILES = [
         'panel.css' => ['dist/panel.css', 'text/css; charset=utf-8'],
         'widget.js' => ['js/widget.js', 'application/javascript; charset=utf-8'],
@@ -33,10 +40,30 @@ class AssetController extends Controller
         ]);
     }
 
-    /** The URL of one of the files, versioned by its modification time. */
+    /** The URL of one of the files, versioned by its modification time: the published copy if there is one. */
     public static function url(string $file): string
     {
+        $published = public_path(self::PUBLISHED . '/' . $file);
+        if (is_file($published)) {
+            return asset(self::PUBLISHED . '/' . $file) . '?v=' . filemtime($published);
+        }
+
         return route('larachat.asset', ['file' => $file]) . '?v=' . filemtime(self::path(self::FILES[$file][0]));
+    }
+
+    /**
+     * Each file and where its published copy goes, for vendor:publish.
+     *
+     * @return array<string, string>
+     */
+    public static function publishable(): array
+    {
+        $paths = [];
+        foreach (self::FILES as $file => [$path]) {
+            $paths[self::path($path)] = public_path(self::PUBLISHED . '/' . $file);
+        }
+
+        return $paths;
     }
 
     protected static function path(string $relative): string

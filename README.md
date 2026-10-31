@@ -68,6 +68,22 @@ Schema::rename('chat_sessions', 'larachat_sessions');
 Schema::rename('chat_messages', 'larachat_messages');
 ```
 
+**If your web server answers `.js` and `.css` requests itself** (a common nginx setup, which
+returns its own 404 for a file that is not on disk), the routes that serve the widget script,
+the panel's CSS and Livewire's own script are never reached. Publish those files to `public/`
+on every install, and the package and Livewire use the copies:
+
+```json
+"post-autoload-dump": [
+    "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+    "@php artisan package:discover --ansi",
+    "@php artisan vendor:publish --tag=livewire:assets --force --ansi",
+    "@php artisan vendor:publish --tag=larachat-assets --force --ansi"
+]
+```
+
+Add `public/vendor/livewire` and `public/vendor/larachat` to `.gitignore`: they are copies.
+
 Add your email to `admins` in `config/larachat.php`, set `OPENAI_API_KEY`, index the site
 (below) and put the widget in your layout:
 
@@ -188,7 +204,8 @@ and structure are yours.
 Optional hooks: `launcher-wrap`, `nudge` and `nudge-close` (a "need help?" bubble, shown with
 `.is-visible`). The badge gets `.is-visible` when there are unread replies. The script and the
 default styles are served by the package with a versioned URL, so an update reaches the site
-without publishing anything. It survives `wire:navigate`; wrap the widget in `@persist('larachat')`
+without publishing anything (or from `public/vendor/larachat` when they are published, see
+Install). It survives `wire:navigate`; wrap the widget in `@persist('larachat')`
 to keep it open across pages.
 
 ## The panel
