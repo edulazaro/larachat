@@ -73,6 +73,10 @@ The first sign of interest also sends you an alert while the visitor is still th
 panel's *Interested, no details* filter lists the conversations that showed interest and left
 no way to reach them.
 
+Prices: the bot never makes up a figure. It quotes only prices written in your persona's
+prompt (a product with published plans, say); for anything else it says you will prepare a
+quote, and the form appears.
+
 If OpenAI or the store fails, the reply falls back to the persona's fallback knowledge, so the
 chat never goes silent. Long conversations are summarised by the cheap model.
 
@@ -212,7 +216,8 @@ never holds an OpenAI key.
 One widget, the same on every site: a launcher in the corner (a round button with a pulse and
 sparks) and a panel above it with the bot's name and the site, the conversation, the contact
 form when it is time, and a message box that grows with the text (Enter sends, Shift+Enter
-breaks the line). On phones the panel takes the screen. What a site sets:
+breaks the line). On phones the panel takes the screen, and with `<html data-bs-theme="dark">`
+(Bootstrap's dark mode) it turns dark. What a site sets:
 
 ```php
 'widget' => [

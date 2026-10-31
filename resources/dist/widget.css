@@ -196,6 +196,30 @@
 .lc-w-input button:hover { background: var(--lc-w-primary-dark); }
 .lc-w-input button:active { transform: scale(0.92); }
 
+/* ---------- Dark mode: follows the page's Bootstrap colour mode (<html data-bs-theme="dark">) ---------- */
+:root[data-bs-theme="dark"] .lc-w-launcher { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5); }
+:root[data-bs-theme="dark"] .lc-w-badge { border-color: #1a1a2e; }
+:root[data-bs-theme="dark"] .lc-w-panel { background: #1e1e2e; color: #e0e0e0; box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06); }
+:root[data-bs-theme="dark"] .lc-w-messages::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); }
+:root[data-bs-theme="dark"] .lc-w-welcome { color: #777; }
+:root[data-bs-theme="dark"] .lc-w-sender { color: #999; }
+:root[data-bs-theme="dark"] .lc-w-bubble--bot, :root[data-bs-theme="dark"] .lc-w-typing { background: #2a2a3e; color: #e0e0e0; }
+:root[data-bs-theme="dark"] .lc-w-typing span { background: #666; }
+:root[data-bs-theme="dark"] .lc-w-form { background: color-mix(in srgb, var(--lc-w-primary) 10%, #1e1e2e); }
+:root[data-bs-theme="dark"] .lc-w-form label, :root[data-bs-theme="dark"] .lc-w-form-privacy { color: #999; }
+:root[data-bs-theme="dark"] .lc-w-form input { background: #2a2a3e; border-color: #444; color: #e0e0e0; }
+:root[data-bs-theme="dark"] .lc-w-form input:focus { border-color: var(--lc-w-primary); }
+:root[data-bs-theme="dark"] .lc-w-form-error { color: #f87171; }
+:root[data-bs-theme="dark"] .lc-w-mode { background: color-mix(in srgb, var(--lc-w-primary) 12%, #1e1e2e); }
+:root[data-bs-theme="dark"] .lc-w-mode-text { color: #aaa; }
+:root[data-bs-theme="dark"] .lc-w-mode-btn { background: color-mix(in srgb, var(--lc-w-primary) 15%, #1e1e2e); }
+:root[data-bs-theme="dark"] .lc-w-input { border-top-color: #333; background: #1e1e2e; }
+:root[data-bs-theme="dark"] .lc-w-input textarea { background: #2a2a3e; border-color: #444; color: #e0e0e0; }
+:root[data-bs-theme="dark"] .lc-w-input textarea:focus { border-color: var(--lc-w-primary); }
+:root[data-bs-theme="dark"] .lc-w-input textarea::placeholder { color: #777; }
+:root[data-bs-theme="dark"] .lc-w-nudge { background: #2a2a3e; color: #e0e0e0; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4); }
+:root[data-bs-theme="dark"] .lc-w-nudge::after { background: #2a2a3e; box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); }
+
 /* ---------- Phones: the panel takes the screen ---------- */
 @media (max-width: 480px) {
     .lc-w-panel { bottom: 0; right: 0; width: 100%; height: 100dvh; max-height: none; border-radius: 0; }
