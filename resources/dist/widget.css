@@ -1,0 +1,112 @@
+/* larachat default widget. Restyle it with the variables below, or publish the
+   view and write your own markup and CSS (the script needs only the data-lc hooks). */
+
+.lc-w {
+    --lc-w-accent: #2563eb;
+    --lc-w-accent-text: #fff;
+    --lc-w-bg: #fff;
+    --lc-w-text: #1f2937;
+    --lc-w-muted: #6b7280;
+    --lc-w-bubble: #f3f4f6;
+    --lc-w-line: #e5e7eb;
+    --lc-w-radius: 16px;
+    --lc-w-font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --lc-w-z: 10000;
+
+    font-family: var(--lc-w-font);
+}
+.lc-w *, .lc-w *::before, .lc-w *::after { box-sizing: border-box; }
+
+.lc-w-launcher {
+    position: fixed; right: 20px; bottom: 20px; z-index: var(--lc-w-z);
+    width: 58px; height: 58px; border: 0; border-radius: 50%;
+    background: var(--lc-w-accent); color: var(--lc-w-accent-text);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18); cursor: pointer;
+    transition: transform 0.2s, opacity 0.2s;
+}
+.lc-w-launcher:hover { transform: scale(1.06); }
+.lc-w.lc-open .lc-w-launcher { opacity: 0; pointer-events: none; }
+
+.lc-w-badge {
+    position: absolute; top: -3px; right: -3px; min-width: 20px; height: 20px; padding: 0 5px;
+    border-radius: 10px; background: #ef4444; color: #fff; font-size: 11px; font-weight: 700;
+    display: none; align-items: center; justify-content: center;
+}
+.lc-w-badge.is-visible { display: flex; }
+
+.lc-w-nudge {
+    position: fixed; right: 24px; bottom: 90px; z-index: var(--lc-w-z);
+    padding: 9px 14px; border-radius: 12px; border-bottom-right-radius: 4px;
+    background: var(--lc-w-bg); color: var(--lc-w-text); font-size: 14px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    opacity: 0; visibility: hidden; transform: translateY(8px);
+    transition: opacity 0.3s, transform 0.3s, visibility 0.3s; cursor: pointer;
+}
+.lc-w-nudge.is-visible { opacity: 1; visibility: visible; transform: none; }
+.lc-w-nudge-close { margin-left: 8px; opacity: 0.45; cursor: pointer; }
+
+.lc-w-panel {
+    position: fixed; right: 20px; bottom: 20px; z-index: calc(var(--lc-w-z) + 1);
+    width: min(380px, calc(100vw - 24px)); height: min(600px, calc(100vh - 40px));
+    display: flex; flex-direction: column; overflow: hidden;
+    border-radius: var(--lc-w-radius); background: var(--lc-w-bg); color: var(--lc-w-text);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+    opacity: 0; visibility: hidden; transform: translateY(12px) scale(0.98);
+    transition: opacity 0.25s, transform 0.25s, visibility 0.25s;
+}
+.lc-w-panel.is-open { opacity: 1; visibility: visible; transform: none; }
+
+@media (max-width: 575.98px) {
+    .lc-w-panel { right: 0; bottom: 0; width: 100vw; height: 100dvh; border-radius: 0; }
+}
+
+.lc-w-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; background: var(--lc-w-accent); color: var(--lc-w-accent-text);
+}
+.lc-w-name { font-weight: 700; }
+.lc-w-site { font-size: 12px; opacity: 0.8; }
+.lc-w-close { border: 0; background: none; color: inherit; font-size: 26px; line-height: 1; cursor: pointer; opacity: 0.85; }
+
+.lc-w-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+
+.lc-w-row { display: flex; max-width: 85%; }
+.lc-w-row--bot { align-self: flex-start; }
+.lc-w-row--visitor { align-self: flex-end; }
+.lc-w-sender { margin-bottom: 3px; font-size: 11px; font-weight: 600; color: var(--lc-w-muted); }
+
+.lc-w-bubble { padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
+.lc-w-bubble--bot { background: var(--lc-w-bubble); border-bottom-left-radius: 4px; }
+.lc-w-bubble--bot a, .lc-w-bubble--admin a { color: var(--lc-w-accent); text-decoration: underline; }
+.lc-w-bubble--admin { background: var(--lc-w-bubble); border-left: 3px solid var(--lc-w-accent); }
+.lc-w-bubble--visitor { background: var(--lc-w-accent); color: var(--lc-w-accent-text); border-bottom-right-radius: 4px; white-space: pre-wrap; }
+.lc-w-time { margin-top: 4px; font-size: 10px; opacity: 0.55; }
+
+.lc-w-typing { display: flex; gap: 4px; padding: 12px 14px; border-radius: 14px; background: var(--lc-w-bubble); }
+.lc-w-typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--lc-w-muted); animation: lc-w-dot 1.2s ease-in-out infinite; }
+.lc-w-typing span:nth-child(2) { animation-delay: 0.2s; }
+.lc-w-typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes lc-w-dot { 0%, 60%, 100% { transform: none; opacity: 0.4; } 30% { transform: translateY(-5px); opacity: 1; } }
+
+.lc-w-contact {
+    display: flex; flex-direction: column; gap: 8px; padding: 12px; max-width: 320px;
+    border: 1px solid var(--lc-w-line); border-radius: 12px; background: var(--lc-w-bg);
+}
+.lc-w-contact p { margin: 0 0 2px; font-size: 13px; line-height: 1.45; }
+.lc-w-contact input { width: 100%; padding: 8px 10px; border: 1px solid var(--lc-w-line); border-radius: 8px; font: inherit; font-size: 13px; }
+.lc-w-contact-error { font-size: 12px; color: #dc2626; }
+.lc-w-contact button { padding: 9px 12px; border: 0; border-radius: 8px; background: var(--lc-w-accent); color: var(--lc-w-accent-text); font-weight: 600; cursor: pointer; }
+.lc-w-contact button:disabled { opacity: 0.6; cursor: wait; }
+
+.lc-w-foot { border-top: 1px solid var(--lc-w-line); }
+.lc-w-mode { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 14px 0; font-size: 12px; }
+.lc-w-mode-text { font-weight: 600; color: #16a34a; }
+.lc-w-mode-btn { padding: 3px 10px; border: 1px solid var(--lc-w-line); border-radius: 999px; background: none; font: inherit; font-size: 12px; cursor: pointer; }
+.lc-w-compose { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px; }
+.lc-w-compose textarea {
+    flex: 1; min-height: 42px; max-height: 140px; padding: 10px 12px; resize: none; overflow-y: hidden;
+    border: 1px solid var(--lc-w-line); border-radius: 12px; font: inherit; font-size: 14px; line-height: 1.4; outline: none;
+}
+.lc-w-compose textarea:focus { border-color: var(--lc-w-accent); }
+.lc-w-send { width: 42px; height: 42px; flex-shrink: 0; border: 0; border-radius: 12px; background: var(--lc-w-accent); color: var(--lc-w-accent-text); display: flex; align-items: center; justify-content: center; cursor: pointer; }

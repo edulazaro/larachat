@@ -1,0 +1,55 @@
+{
+    "name": "edulazaro/larachat",
+    "description": "A website chat for Laravel that a bot answers and you can take over: retrieval over your own pages (JSON or Meilisearch), a cheap model that turns away off-topic questions before the expensive one is called, deterministic guards against prompt injection and abuse, lead capture, a private inbox to read and reply, and email or Telegram alerts.",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "laravel",
+        "livewire",
+        "chat",
+        "chatbot",
+        "live-chat",
+        "rag",
+        "openai",
+        "meilisearch",
+        "telegram",
+        "inbox"
+    ],
+    "require": {
+        "php": ">=8.2",
+        "laravel/framework": ">=12.0",
+        "livewire/livewire": "^3.5"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0",
+        "orchestra/testbench": "^10.0"
+    },
+    "suggest": {
+        "edulazaro/larameili": "Required for the meilisearch knowledge driver (larachat.knowledge.driver = 'meilisearch'). The json driver needs nothing."
+    },
+    "autoload": {
+        "psr-4": {
+            "EduLazaro\\Larachat\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "EduLazaro\\Larachat\\Tests\\": "tests/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Edu Lazaro",
+            "email": "edu@edulazaro.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "EduLazaro\\Larachat\\LarachatServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
