@@ -106,7 +106,7 @@ return [
 
     'openai' => [
         'api_key' => env('OPENAI_API_KEY'),
-        'model' => 'gpt-6.1-sol',
+        'model' => 'gpt-6.1-terra',
         'reasoning_effort' => 'low',
         'max_tokens' => 2000,
         'filter_model' => 'gpt-6-luna',
