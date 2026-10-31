@@ -96,7 +96,6 @@ class LarachatServiceProvider extends ServiceProvider
     protected function registerRateLimiters(): void
     {
         $limits = [
-            'larachat-init' => 'init_per_minute',
             'larachat-send' => 'send_per_minute',
             'larachat-poll' => 'poll_per_minute',
             'larachat-switch' => 'switch_per_minute',
@@ -118,7 +117,9 @@ class LarachatServiceProvider extends ServiceProvider
 
         // The widget's API: JSON, no session, no CSRF.
         Route::prefix(trim($routes['api'], '/'))->middleware([SubstituteBindings::class])->group(function () {
-            Route::post('init', [ChatController::class, 'init'])->middleware('throttle:larachat-init')->name('larachat.init');
+            // Restoring a conversation happens on every page the visitor opens, so the
+            // route only has the generous poll limit; creating one has its own limit.
+            Route::post('init', [ChatController::class, 'init'])->middleware('throttle:larachat-poll')->name('larachat.init');
             Route::post('send', [ChatController::class, 'send'])->middleware('throttle:larachat-send')->name('larachat.send');
             Route::post('contact', [ChatController::class, 'contact'])->middleware('throttle:larachat-switch')->name('larachat.contact');
             Route::post('contact-form', [ChatController::class, 'contactForm'])->middleware('throttle:larachat-switch')->name('larachat.contact_form');

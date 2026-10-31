@@ -207,6 +207,18 @@ class ChatApiTest extends TestCase
             ->assertJsonPath('message.message', '¡Hola de nuevo! Soy Nodo, ¿en qué te puedo ayudar?');
     }
 
+    public function test_restoring_a_conversation_is_never_refused_only_creating_many_is(): void
+    {
+        config(['larachat.limits.init_per_minute' => 2]);
+        $token = $this->startChat();
+        $this->startChat();
+
+        $this->postJson('/api/chat/init', ['token' => null, 'page' => '/'])->assertStatus(429)->assertJsonPath('code', 'too_many');
+        foreach (range(1, 10) as $i) {
+            $this->postJson('/api/chat/init', ['token' => $token, 'page' => '/'])->assertOk()->assertJsonPath('token', $token);
+        }
+    }
+
     public function test_a_blocked_ip_cannot_open_a_new_conversation(): void
     {
         $token = $this->startChat();

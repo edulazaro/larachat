@@ -51,12 +51,16 @@
         };
         var storeKey = cfg.storageKey || 'larachat_token';
 
+        // A token is 48 letters and digits; anything else stored there (an old failed
+        // response once saved "undefined") is dropped instead of being sent forever.
         var token = read(localStorage, storeKey), lastId = 0, pollTimer = null, sending = false,
             started = false, mode = 'ai', interval = 3000, idlePolls = 0, nudgeDismissed = false,
             restored = false, hasContact = false, lead = false, waitTimer = null, alive = true,
             shown = {};
 
         function read(store, key) { try { return store.getItem(key); } catch (e) { return null; } }
+        function valid(t) { return typeof t === 'string' && /^[A-Za-z0-9]{48}$/.test(t); }
+        if (token !== null && !valid(token)) { write(localStorage, storeKey, null); token = null; }
         function write(store, key, value) { try { value === null ? store.removeItem(key) : store.setItem(key, value); } catch (e) {} }
 
         function isOpen() { return el.panel && el.panel.classList.contains('is-open'); }
@@ -71,6 +75,9 @@
         function init() {
             if (!token) return;
             post(cfg.urls.init, { token: token, page: page() }).then(function (data) {
+                // A refused or failed restore (too many requests, server down) keeps
+                // what the browser has: the next page tries again.
+                if (!data || !valid(data.token)) return;
                 token = data.token; write(localStorage, storeKey, token);
                 if (data.mode) mode = data.mode;
                 if (data.has_contact) hasContact = true;
@@ -229,11 +236,12 @@
         }
 
         function ensureSession() {
-            return new Promise(function (resolve) {
+            return new Promise(function (resolve, reject) {
                 if (token) { resolve(); return; }
                 post(cfg.urls.init, { token: null, page: page() }).then(function (data) {
+                    if (!data || !valid(data.token)) { reject(new Error('no session')); return; }
                     token = data.token; write(localStorage, storeKey, token); started = true; resolve();
-                });
+                }).catch(reject);
             });
         }
 

@@ -48,6 +48,14 @@ class ChatController extends Controller
             }
         }
 
+        // Only new conversations count against init_per_minute: the widget restores
+        // the visitor's own on every page, and that must never be refused.
+        $key = 'larachat-new:' . $request->ip();
+        if (RateLimiter::tooManyAttempts($key, (int) config('larachat.limits.init_per_minute', 5))) {
+            return response()->json(['message' => 'Too many new conversations.', 'code' => 'too_many'], 429);
+        }
+        RateLimiter::hit($key, 60);
+
         $session = ChatSession::create([
             'session_token' => ChatSession::generateToken(),
             'visitor_ip' => $request->ip(),
