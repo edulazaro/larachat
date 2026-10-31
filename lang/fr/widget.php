@@ -1,6 +1,10 @@
 <?php
 
 return [
+    // The panel's header and the line above the greeting.
+    'by' => 'by :site',
+    'status' => 'Assistant IA + équipe humaine',
+    'welcome' => 'Assistant IA de :site',
     'greeting' => 'Bonjour ! Je suis :bot, l\'assistant de :site. Comment puis-je vous aider ? Si vous souhaitez parler à :owner, dites-le-moi.',
     'placeholder' => 'Écrivez un message…',
     'nudge' => 'Besoin d\'aide ?',

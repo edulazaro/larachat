@@ -46,7 +46,8 @@
             wrap: q('launcher-wrap'), launcher: q('launcher'), panel: q('panel'), close: q('close'),
             messages: q('messages'), input: q('input'), send: q('send'), badge: q('badge'),
             nudge: q('nudge'), nudgeClose: q('nudge-close'), nudgeText: q('nudge-text'), modeBar: q('mode-bar'),
-            modeText: q('mode-text'), modeBtn: q('mode-btn'), modeBtnText: q('mode-btn-text')
+            modeText: q('mode-text'), modeBtn: q('mode-btn'), modeBtnText: q('mode-btn-text'),
+            particles: q('particles')
         };
         var storeKey = cfg.storageKey || 'larachat_token';
 
@@ -118,6 +119,24 @@
             return null;
         }
 
+        // Sparks around the standard launcher while the chat is closed, in its colour.
+        var sparks = null, still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        function spark() {
+            if (isOpen() || !el.particles) return;
+            var p = document.createElement('span'), size = 3 + Math.random() * 4, angle = Math.random() * Math.PI * 2, dist = 30 + Math.random() * 40;
+            p.className = 'lc-w-particle';
+            p.style.width = p.style.height = size + 'px';
+            p.style.left = (20 + Math.random() * 44) + 'px';
+            p.style.top = (20 + Math.random() * 44) + 'px';
+            p.style.filter = 'brightness(' + (1 + Math.random() * 0.6).toFixed(2) + ')';
+            p.style.setProperty('--lc-w-px', Math.cos(angle) * dist + 'px');
+            p.style.setProperty('--lc-w-py', Math.sin(angle) * dist + 'px');
+            p.addEventListener('animationend', function () { p.remove(); });
+            el.particles.appendChild(p);
+        }
+        function startSparks() { if (el.particles && !still && !sparks) sparks = setInterval(spark, 400); }
+        function stopSparks() { if (sparks) { clearInterval(sparks); sparks = null; } if (el.particles) el.particles.innerHTML = ''; }
+
         function openForm() { return root.querySelector('[data-lc-form]'); }
         function removeForm() { var f = openForm(); if (f) f.remove(); }
 
@@ -132,7 +151,8 @@
                 btn = card.querySelector('[data-lc="contact-send"]');
             if (title) title.textContent = form.title || '';
             if (privacy) privacy.innerHTML = form.privacy || '';
-            ['name', 'email', 'phone'].forEach(function (n) { var i = card.querySelector('[name="' + n + '"]'); if (i && !i.placeholder) i.placeholder = T['form_' + n] || ''; });
+            // A field without a label of its own says what it is inside it.
+            ['name', 'email', 'phone'].forEach(function (n) { var i = card.querySelector('[name="' + n + '"]'); if (i && !i.placeholder && !i.closest('label')) i.placeholder = T['form_' + n] || ''; });
             var label = btn ? (btn.textContent.trim() || T.form_send || '') : '';
             if (btn) btn.textContent = label;
             // What each field may hold is enforced while typing, not only when sending:
@@ -246,6 +266,7 @@
             if (isOpen()) {
                 el.panel.classList.remove('is-open'); root.classList.remove('lc-open');
                 if (cfg.lockScroll) document.body.style.overflow = '';
+                startSparks();
                 // Leaving after showing interest, without a way to be reached: the form
                 // waits in the conversation and the bubble says so.
                 if (lead && !hasContact) {
@@ -255,6 +276,7 @@
                 if (!restored) { restored = true; init(); }
                 el.panel.classList.add('is-open'); root.classList.add('lc-open');
                 if (cfg.lockScroll) document.body.style.overflow = 'hidden';
+                stopSparks();
                 if (el.badge) { el.badge.classList.remove('is-visible'); el.badge.textContent = '0'; }
                 scrollDown();
                 setTimeout(function () { el.input && el.input.focus(); }, 400);
@@ -381,6 +403,11 @@
         el.nudge && el.nudge.addEventListener('click', function () { hideNudge(); if (!isOpen()) toggle(); });
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && isOpen()) toggle(); });
 
+        // The greeting's time comes from the browser: rendered by the server it was
+        // in the server's time zone.
+        Array.prototype.forEach.call(root.querySelectorAll('[data-lc-static] [data-lc-slot="time"]'), function (t) { if (!t.textContent.trim()) t.textContent = now(); });
+        startSparks();
+
         // The chat always starts closed. An existing conversation is restored in the
         // background (history, mode, polling) so replies arrive and bump the badge.
         if (token && !restored) { restored = true; init(); }
@@ -389,7 +416,7 @@
         root.__larachat = {
             open: function () { if (!isOpen()) toggle(); },
             close: function () { if (isOpen()) toggle(); },
-            stop: function () { alive = false; stopPolling(); clearTimeout(waitTimer); }
+            stop: function () { alive = false; stopPolling(); stopSparks(); clearTimeout(waitTimer); }
         };
     }
 

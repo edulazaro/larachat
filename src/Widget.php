@@ -71,9 +71,26 @@ class Widget
         return '<script src="' . e(AssetController::url('widget.js')) . '" defer data-navigate-once></script>';
     }
 
-    /** The default widget's stylesheet. */
+    /**
+     * The widget's stylesheet, and the site's colours and corner rounding from
+     * the config as CSS variables. Values that are not a colour or a number of
+     * pixels are left out, so nothing else can reach the style element.
+     */
     public static function styles(): string
     {
-        return '<link rel="stylesheet" href="' . e(AssetController::url('widget.css')) . '" data-navigate-once>';
+        $vars = [];
+        foreach (['primary' => '--lc-w-primary', 'primary_dark' => '--lc-w-primary-dark'] as $key => $var) {
+            $color = trim((string) config('larachat.widget.colors.' . $key, ''));
+            if (preg_match('/^(#[0-9a-fA-F]{3,8}|rgba?\([0-9., %]+\)|hsla?\([0-9., %deg]+\))$/', $color)) {
+                $vars[] = $var . ':' . $color;
+            }
+        }
+        $radius = config('larachat.widget.radius');
+        if (is_numeric($radius) && $radius >= 0 && $radius <= 40) {
+            $vars[] = '--lc-w-radius:' . (float) $radius . 'px';
+        }
+
+        return '<link rel="stylesheet" href="' . e(AssetController::url('widget.css')) . '" data-navigate-once>'
+            . ($vars ? '<style>.lc-w{' . implode(';', $vars) . '}</style>' : '');
     }
 }

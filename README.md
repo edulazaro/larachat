@@ -204,44 +204,43 @@ never holds an OpenAI key.
 
 ## The widget
 
-`@include('larachat::widget')` gives you a working corner widget whose colours come from CSS
-variables (`--lc-w-accent` and friends). For your own look, write your own markup: the script
-finds everything by `data-lc` attributes and builds messages from `<template>`s, so classes
-and structure are yours.
-
 ```blade
-<div data-larachat data-larachat-config="{{ \EduLazaro\Larachat\Widget::config() }}">
-    <button data-lc="launcher">Chat <span data-lc="badge"></span></button>
-    <div data-lc="panel">                         {{-- gets .is-open; the root gets .lc-open --}}
-        <button data-lc="close">×</button>
-        <div data-lc="messages">
-            <div data-lc-static>{{ \EduLazaro\Larachat\Widget::text('greeting') }}</div>
-        </div>
-        <div data-lc="mode-bar" hidden><span data-lc="mode-text"></span><button data-lc="mode-btn"><span data-lc="mode-btn-text"></span></button></div>
-        <textarea data-lc="input"></textarea>
-        <button data-lc="send">Send</button>
-    </div>
-
-    <template data-lc-template="visitor"><div class="me"><span data-lc-slot="text"></span> <small data-lc-slot="time"></small></div></template>
-    <template data-lc-template="bot"><div class="bot"><b data-lc-slot="sender">Ada</b> <span data-lc-slot="text"></span></div></template>
-    <template data-lc-template="admin"><div class="owner"><b data-lc-slot="sender"></b> <span data-lc-slot="text"></span></div></template>
-    <template data-lc-template="typing"><div class="typing">…</div></template>
-    <template data-lc-template="contact">                 {{-- the contact form --}}
-        <div><b data-lc-slot="title"></b>
-            <input name="name"><input name="email"><input name="phone">
-            <div data-lc-slot="error"></div><button data-lc="contact-send">Send</button>
-            <small data-lc-slot="privacy"></small></div>
-    </template>
-</div>
-{!! \EduLazaro\Larachat\Widget::script() !!}
+@include('larachat::widget')
 ```
 
-Optional hooks: `launcher-wrap`, `nudge` and `nudge-close` (a "need help?" bubble, shown with
-`.is-visible`), and `nudge-text` inside the bubble, which takes the invitation to leave details
-when an interested visitor closes the chat. The badge gets `.is-visible` when there are unread replies. The script and the
-default styles are served by the package with a versioned URL, so an update reaches the site
-without publishing anything (or from `public/vendor/larachat` when they are published, see
-Install). It survives `wire:navigate`; wrap the widget in `@persist('larachat')`
+One widget, the same on every site: a launcher in the corner (a round button with a pulse and
+sparks) and a panel above it with the bot's name and the site, the conversation, the contact
+form when it is time, and a message box that grows with the text (Enter sends, Shift+Enter
+breaks the line). On phones the panel takes the screen. What a site sets:
+
+```php
+'widget' => [
+    'colors' => ['primary' => '#2563eb', 'primary_dark' => '#1d4ed8'],
+    'radius' => 16,                           // the panel's corners; bubbles and fields follow
+    'owner_avatar' => '/img/team/me.webp',    // your replies; without it, your initial
+    'launcher' => null,                       // or a Blade view of your own (below)
+],
+```
+
+Colours that are not a colour and a radius that is not a number of pixels are ignored. The
+texts (greeting, header, placeholder, the bubble) come from the package's lang files and are
+overridden in `lang/vendor/larachat/{locale}/widget.php`.
+
+**A launcher of your own.** Point `widget.launcher` at a Blade view and it replaces the
+standard button; everything else stays the standard widget. The view needs an element with
+`data-lc="launcher"` (it opens the chat) and may have one with `data-lc="badge"` (the unread
+count, which gets `.is-visible`). The root gets `.lc-open` while the chat is open, if you want
+to hide your launcher then:
+
+```blade
+<button type="button" class="my-orb" data-lc="launcher">
+    <canvas></canvas><span data-lc="badge">0</span>
+</button>
+```
+
+The script and the stylesheet are served by the package with a versioned URL, so an update
+reaches the site without publishing anything (or from `public/vendor/larachat` when they are
+published, see Install). The widget survives `wire:navigate`; wrap it in `@persist('larachat')`
 to keep it open across pages.
 
 ## The panel

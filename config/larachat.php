@@ -91,6 +91,18 @@ return [
         'storage_key' => 'larachat_token',
         'lock_scroll' => false,
         'nudge_seconds' => 5,
+        // The look: the widget is the same on every site, in these colours and
+        // with this rounding of the corners (the panel; bubbles and fields follow).
+        'colors' => [
+            'primary' => '#0088cc',
+            'primary_dark' => '#006da3',
+        ],
+        'radius' => 16,
+        // A photo for the owner's replies; without one, the initial of their name.
+        'owner_avatar' => null,
+        // A Blade view to use instead of the standard launcher button. It must hold
+        // an element with data-lc="launcher" and may hold one with data-lc="badge".
+        'launcher' => null,
     ],
 
     /*
