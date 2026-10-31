@@ -43,6 +43,7 @@ return [
     'form_reason_close' => 'cerró el chat',
     'form_reason_handoff' => 'pidió hablar contigo',
     'form_reason_wait' => 'no contestaste a tiempo',
+    'form_reason_busy' => 'el bot había llegado a su tope diario',
     'since' => 'desde',
     'back' => 'Volver',
     'delete' => 'Borrar',
@@ -77,6 +78,10 @@ return [
     'password_saved' => 'Contraseña cambiada.',
     'current_required' => 'Escribe tu contraseña actual.',
     'current_wrong' => 'La contraseña actual no es correcta.',
+    'email_password' => 'Contraseña actual (solo si cambias el email)',
+    'email_password_required' => 'Para cambiar el email, escribe tu contraseña actual.',
+    'email_not_admin' => 'Ese email no está en la lista admins de config/larachat.php: perderías el acceso al panel.',
+    'password_min' => 'La contraseña debe tener al menos 12 caracteres.',
     'new_required' => 'Escribe la nueva contraseña.',
     'mismatch' => 'Las contraseñas no coinciden.',
 
@@ -93,6 +98,8 @@ return [
     'mail_interested_subject' => 'Interesado en el chat #:id, todavía sin datos',
     'mail_interested_intro' => 'Alguien muestra interés real y aún no ha dejado sus datos. Si entras ahora, puedes hablar con él en directo.',
     'mail_last' => 'Último mensaje',
+    'mail_budget_subject' => 'El chat ha llegado hoy a su tope de :count respuestas',
+    'mail_budget_intro' => 'Hasta medianoche el bot no llama a OpenAI: contesta con un texto fijo y ofrece el formulario de contacto, así que los leads no se pierden. Si no esperabas tanto tráfico, puede ser un ataque. El tope es limits.replies_per_day (:count).',
 
     // Telegram
     'tg_new' => '🆕 <b>Nuevo chat #:id</b>',

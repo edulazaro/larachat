@@ -13,6 +13,11 @@
             <input id="email" type="email" class="lc-input" wire:model="email">
             @error('email') <div class="lc-error">{{ $message }}</div> @enderror
         </div>
+        <div class="lc-field">
+            <label class="lc-label" for="email_password">{{ __('larachat::panel.email_password') }}</label>
+            <input id="email_password" type="password" class="lc-input" wire:model="email_password" autocomplete="current-password">
+            @error('email_password') <div class="lc-error">{{ $message }}</div> @enderror
+        </div>
         <button type="submit" class="lc-btn lc-btn--primary">{{ __('larachat::panel.save') }}</button>
     </form>
 

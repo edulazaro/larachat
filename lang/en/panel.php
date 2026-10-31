@@ -43,6 +43,7 @@ return [
     'form_reason_close' => 'closed the chat',
     'form_reason_handoff' => 'asked for you',
     'form_reason_wait' => 'you did not answer in time',
+    'form_reason_busy' => 'the bot had reached its daily cap',
     'since' => 'since',
     'back' => 'Back',
     'delete' => 'Delete',
@@ -77,6 +78,10 @@ return [
     'password_saved' => 'Password changed.',
     'current_required' => 'Enter your current password.',
     'current_wrong' => 'The current password is not correct.',
+    'email_password' => 'Current password (only if you change the email)',
+    'email_password_required' => 'To change the email, enter your current password.',
+    'email_not_admin' => 'That email is not in the admins list of config/larachat.php: you would lose access to the panel.',
+    'password_min' => 'The password must be at least 12 characters long.',
     'new_required' => 'Enter the new password.',
     'mismatch' => 'The passwords do not match.',
 
@@ -93,6 +98,8 @@ return [
     'mail_interested_subject' => 'Interested visitor in chat #:id, no details yet',
     'mail_interested_intro' => 'Someone is showing real interest and has not left their details yet. If you open it now, you can talk to them live.',
     'mail_last' => 'Last message',
+    'mail_budget_subject' => 'The chat reached its cap of :count replies today',
+    'mail_budget_intro' => 'Until midnight the bot does not call OpenAI: it answers with a fixed text and offers the contact form, so no lead is lost. If you did not expect this much traffic, it may be an attack. The cap is limits.replies_per_day (:count).',
 
     // Telegram
     'tg_new' => '🆕 <b>New chat #:id</b>',

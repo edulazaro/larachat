@@ -17,6 +17,9 @@ class Profile extends Component
 
     public string $email = '';
 
+    /** The current password, asked for when the email changes. */
+    public string $email_password = '';
+
     public string $current_password = '';
 
     public string $password = '';
@@ -41,13 +44,28 @@ class Profile extends Component
     public function saveProfile(): void
     {
         $user = Auth::user();
-        $this->validate([
+        $password = $this->email_password;
+        $this->reset('email_password');
+        $changesEmail = mb_strtolower(trim($this->email)) !== mb_strtolower((string) $user->email);
+
+        Validator::make(['name' => $this->name, 'email' => $this->email, 'email_password' => $password], [
             'name' => 'required|string|max:120',
-            'email' => ['required', 'email', 'max:160', Rule::unique($user->getTable(), 'email')->ignore($user->getKey())],
-        ]);
+            'email' => ['required', 'email', 'max:160', Rule::unique($user->getTable(), 'email')->ignore($user->getKey()),
+                // Access to the panel is the admins list: an email outside it locks you out.
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    if (! in_array(mb_strtolower(trim((string) $value)), Larachat::adminEmails(), true)) {
+                        $fail(__('larachat::panel.email_not_admin'));
+                    }
+                }],
+            // A stolen session alone must not be enough to change who can sign in.
+            'email_password' => $changesEmail ? 'required|current_password' : 'nullable',
+        ], [
+            'email_password.required' => __('larachat::panel.email_password_required'),
+            'email_password.current_password' => __('larachat::panel.current_wrong'),
+        ])->validate();
 
         // forceFill: the host's User model decides its own $fillable.
-        $user->forceFill(['name' => $this->name, 'email' => $this->email])->save();
+        $user->forceFill(['name' => $this->name, 'email' => trim($this->email)])->save();
         session()->flash('profile_saved', __('larachat::panel.saved'));
     }
 
@@ -60,12 +78,13 @@ class Profile extends Component
 
         Validator::make($input, [
             'current_password' => 'required|current_password',
-            'password' => 'required|string|confirmed',
+            'password' => 'required|string|min:12|confirmed',
         ], [
             'current_password.required' => __('larachat::panel.current_required'),
             'current_password.current_password' => __('larachat::panel.current_wrong'),
             'password.required' => __('larachat::panel.new_required'),
             'password.confirmed' => __('larachat::panel.mismatch'),
+            'password.min' => __('larachat::panel.password_min'),
         ])->validate();
 
         // Hashed here: the host's User model may not cast the password itself.

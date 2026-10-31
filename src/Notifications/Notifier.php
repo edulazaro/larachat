@@ -4,6 +4,7 @@ namespace EduLazaro\Larachat\Notifications;
 
 use EduLazaro\Larachat\Larachat;
 use EduLazaro\Larachat\Models\ChatSession;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -21,6 +22,10 @@ class Notifier
     /** The first message of a conversation. */
     public function newConversation(ChatSession $session, string $firstMessage): void
     {
+        if (! $this->withinAlertCap($session)) {
+            return;
+        }
+
         $this->mail($session, $this->t('mail_new_subject', ['id' => $session->id]), [
             $this->t('mail_new_intro', ['site' => Larachat::persona()->site()]),
             '',
@@ -80,6 +85,10 @@ class Notifier
      */
     public function interested(ChatSession $session, string $visitorMessage): void
     {
+        if (! $this->withinAlertCap($session)) {
+            return;
+        }
+
         $this->mail($session, $this->t('mail_interested_subject', ['id' => $session->id]), [
             $this->t('mail_interested_intro'),
             '',
@@ -94,6 +103,10 @@ class Notifier
     /** The visitor left a way to reach them. */
     public function lead(ChatSession $session): void
     {
+        if (! $this->withinAlertCap($session)) {
+            return;
+        }
+
         $who = $session->visitor_name ?: ($session->visitor_email ?: $session->visitor_phone);
 
         $details = [
@@ -110,6 +123,39 @@ class Notifier
 
         $this->telegram($session, $this->t('tg_lead', ['id' => $session->id]) . "\n\n"
             . implode("\n", array_map([Telegram::class, 'e'], $details)), $session->mode === 'human' ? 'ai' : 'human');
+    }
+
+    /** Today's reply budget is spent: one email that day, whatever happens after. */
+    public function budgetSpent(int $limit): void
+    {
+        $to = config('larachat.notifications.mail.to');
+        if (! $to || ! Cache::add('larachat-budget-alert:' . now()->toDateString(), true, now()->addDays(2))) {
+            return;
+        }
+
+        $subject = $this->t('mail_budget_subject', ['count' => $limit]);
+        $body = $this->t('mail_budget_intro', ['count' => $limit]) . "\n\n" . $this->t('mail_open') . ': ' . route('larachat.panel');
+
+        dispatch(function () use ($to, $subject, $body) {
+            try {
+                Mail::raw($body, fn ($message) => $message->to($to)->subject($subject));
+            } catch (\Throwable $e) {
+                Log::error('Larachat: budget alert failed', ['error' => $e->getMessage()]);
+            }
+        })->afterResponse();
+    }
+
+    /**
+     * Alerts per visitor IP and day (new conversation, interested, lead), so a
+     * script opening conversations cannot flood the inbox. Conversations you
+     * are in (handoffs, messages while it is yours) are never capped.
+     */
+    public function withinAlertCap(ChatSession $session): bool
+    {
+        $key = 'larachat-alerts:' . ($session->visitor_ip ?: 'unknown') . ':' . now()->toDateString();
+        Cache::add($key, 0, now()->addDays(2));
+
+        return (int) Cache::increment($key) <= (int) config('larachat.notifications.mail.per_ip_per_day', 10);
     }
 
     /**

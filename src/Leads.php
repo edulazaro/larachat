@@ -174,7 +174,7 @@ class Leads
 
     protected function title(string $reason, string $locale): string
     {
-        $key = in_array($reason, ['interest', 'price', 'goodbye', 'close', 'handoff', 'wait'], true) ? $reason : 'interest';
+        $key = in_array($reason, ['interest', 'price', 'goodbye', 'close', 'handoff', 'wait', 'busy'], true) ? $reason : 'interest';
 
         return Larachat::persona()->text('form_' . $key, $locale);
     }

@@ -8,6 +8,8 @@ return [
     'blocked_no_email' => 'In this conversation I can only help with questions about :site.',
     'limit' => 'We\'ve talked a lot here today. If you\'d like to continue, email us at :email and we\'ll reply personally.',
     'limit_no_email' => 'We\'ve talked a lot here today. Come back tomorrow and we\'ll carry on.',
+    // The day's reply budget is spent: no model until midnight, the form instead.
+    'busy' => 'I can\'t answer in detail right now. Leave your details for :owner below and they\'ll write to you personally.',
     'noise' => 'I didn\'t catch that. Tell me what you need and I\'ll help.',
     'offtopic' => 'I can only help here with anything about :site. What do you need?',
     'offtopic_blocked' => 'This chat is only for questions about :site, so I\'ll leave it here for today. If you need anything, email us at :email and we\'ll reply personally.',
@@ -32,6 +34,7 @@ return [
     'form_close' => 'Would you like :owner to get in touch?',
     'form_handoff' => 'Leave your details for :owner',
     'form_wait' => ':owner hasn\'t been able to answer yet: leave your details',
+    'form_busy' => 'So :owner can get back to you',
     'form_privacy' => 'We only use them to reply to you.',
     'form_privacy_link' => 'Privacy policy',
     'form_name_required' => 'Please enter your name.',

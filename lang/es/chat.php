@@ -8,6 +8,8 @@ return [
     'blocked_no_email' => 'En esta conversación solo puedo atender consultas sobre :site.',
     'limit' => 'Hoy ya hemos hablado mucho por aquí. Si quieres seguir, escríbenos a :email y te respondemos personalmente.',
     'limit_no_email' => 'Hoy ya hemos hablado mucho por aquí. Vuelve mañana y seguimos.',
+    // The day's reply budget is spent: no model until midnight, the form instead.
+    'busy' => 'Ahora mismo no puedo responderte con detalle. Déjale tus datos a :owner aquí abajo y te escribirá personalmente.',
     'noise' => 'No he entendido eso. Dime qué necesitas y te ayudo.',
     'offtopic' => 'Aquí solo te puedo ayudar con lo relacionado con :site. ¿Qué necesitas?',
     'offtopic_blocked' => 'Este chat es solo para consultas sobre :site, así que por hoy lo dejo aquí. Si necesitas algo, escríbenos a :email y te respondemos personalmente.',
@@ -32,6 +34,7 @@ return [
     'form_close' => '¿Quieres que :owner te escriba?',
     'form_handoff' => 'Déjale tus datos a :owner',
     'form_wait' => ':owner no ha podido contestar todavía: déjale tus datos',
+    'form_busy' => 'Para que :owner te escriba',
     'form_privacy' => 'Solo los usamos para responderte.',
     'form_privacy_link' => 'Privacidad',
     'form_name_required' => 'Escribe tu nombre.',

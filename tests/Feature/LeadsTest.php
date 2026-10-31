@@ -154,6 +154,7 @@ class LeadsTest extends TestCase
     {
         config(['larachat.limits.switch_per_minute' => 100]);
         $token = $this->startChat();
+        app(Leads::class)->place(ChatSession::first(), 'interest');
         $send = fn (array $fields) => $this->postJson('/api/chat/contact', ['token' => $token] + $fields);
 
         $send(['name' => 'Laura 123', 'email' => 'laura@acme.test'])->assertStatus(422)->assertJsonPath('errors.name.0', 'Escribe solo letras en el nombre.');
@@ -163,6 +164,38 @@ class LeadsTest extends TestCase
         $send(['name' => 'Laura', 'email' => 'laura@acme.test', 'phone' => '600 11'])->assertStatus(422);
 
         $send(['name' => "María-José O'Neill", 'email' => 'mj@acme.test', 'phone' => '+376 (600) 111-222'])->assertOk();
+    }
+
+    public function test_past_the_daily_budget_the_model_is_not_called_and_the_form_takes_over(): void
+    {
+        config(['larachat.limits.replies_per_day' => 2, 'larachat.notifications.mail.to' => 'edu@acme.test']);
+        $this->fakeOpenAi(['reply' => 'Claro.']);
+        $token = $this->startChat();
+
+        $this->say($token, 'Hola, hacéis webs?');
+        $this->say($token, 'Para una clínica');
+        $third = $this->say($token, 'Con reservas online');
+
+        $this->assertSame(__('larachat::chat.busy', ['owner' => 'Edu'], 'es'), $third->json('ai_reply'));
+        $this->assertSame(__('larachat::chat.form_busy', ['owner' => 'Edu'], 'es'), $third->json('form.title'));
+        $this->assertCount(2, collect($this->sent)->where('step', 'reply'), 'the model was called twice, not three times');
+
+        // Noise never reaches the model, so it does not spend the budget either.
+        config(['larachat.limits.replies_per_day' => 100]);
+        $before = count($this->sent);
+        $this->say($this->startChat(), 'x');
+        $this->assertCount($before, $this->sent);
+    }
+
+    public function test_alerts_per_visitor_ip_are_capped(): void
+    {
+        config(['larachat.notifications.mail.per_ip_per_day' => 3]);
+        $notifier = app(\EduLazaro\Larachat\Notifications\Notifier::class);
+        $session = ChatSession::create(['session_token' => str_repeat('c', 48), 'visitor_ip' => '203.0.113.7']);
+        $other = ChatSession::create(['session_token' => str_repeat('d', 48), 'visitor_ip' => '203.0.113.8']);
+
+        $this->assertSame([true, true, true, false, false], array_map(fn () => $notifier->withinAlertCap($session), range(1, 5)));
+        $this->assertTrue($notifier->withinAlertCap($other), 'another visitor has their own count');
     }
 
     public function test_prices_and_goodbyes_are_recognised_in_every_language(): void

@@ -139,9 +139,11 @@ class ChatController extends Controller
 
                 // The contact form, when this is one of the moments to ask for it.
                 if (empty($result['off_topic'])) {
-                    $form = ! empty($result['ask_contact'])
-                        ? $this->leads->place($session, 'handoff')
-                        : $this->leads->afterReply($session, $text, (bool) ($result['qualified'] ?? false));
+                    $form = match (true) {
+                        ! empty($result['ask_contact']) => $this->leads->place($session, 'handoff'),
+                        ! empty($result['busy']) => $this->leads->place($session, 'busy'),
+                        default => $this->leads->afterReply($session, $text, (bool) ($result['qualified'] ?? false)),
+                    };
                     if ($form) {
                         $response['form'] = $this->leads->present($form, $session);
                     }
@@ -174,6 +176,13 @@ class ChatController extends Controller
         $session = ChatSession::where('session_token', $request->input('token'))->first();
         if (! $session) {
             return response()->json(['error' => 'Session not found', 'code' => 'session_not_found'], 404);
+        }
+
+        // Details are taken only through a form the chat placed and the visitor has
+        // not sent yet. Without this a script could post invented leads, one alert
+        // email each, without the conversation ever reaching the model.
+        if (! $this->leads->open($session)) {
+            return response()->json(['ok' => false, 'code' => 'no_form'], 409);
         }
 
         $locale = $session->locale();
@@ -257,14 +266,20 @@ class ChatController extends Controller
         return response()->json(['form' => $form ? $this->leads->present($form, $session) : null]);
     }
 
+    /**
+     * New replies since `after`. A GET, so the token travels in a header and
+     * not in the URL, where it would end up in every access log on the way.
+     */
     public function poll(Request $request): JsonResponse
     {
-        $request->validate([
-            'token' => 'required|string|size:48',
-            'after' => 'nullable|integer|min:0',
-        ]);
+        $request->validate(['after' => 'nullable|integer|min:0']);
 
-        $session = ChatSession::where('session_token', $request->input('token'))->first();
+        $token = (string) $request->header('X-Larachat-Token', '');
+        if (strlen($token) !== 48) {
+            return response()->json(['message' => 'The X-Larachat-Token header is required.'], 422);
+        }
+
+        $session = ChatSession::where('session_token', $token)->first();
         if (! $session) {
             return response()->json(['error' => 'Session not found', 'code' => 'session_not_found'], 404);
         }

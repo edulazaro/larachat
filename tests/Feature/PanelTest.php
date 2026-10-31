@@ -147,6 +147,44 @@ class PanelTest extends TestCase
         $this->assertTrue(Hash::check('n3w-password', $admin->fresh()->password));
     }
 
+    public function test_the_password_needs_twelve_characters_and_the_email_needs_the_password(): void
+    {
+        config(['larachat.admins' => ['edu@acme.test', 'edu@other.test']]);
+        $admin = $this->admin();
+        $this->actingAs($admin);
+
+        Livewire::test(Profile::class)
+            ->set('current_password', 'secret-password')->set('password', 'short')->set('password_confirmation', 'short')
+            ->call('savePassword')->assertHasErrors(['password' => 'min']);
+
+        Livewire::test(Profile::class)->set('email', 'edu@other.test')->call('saveProfile')
+            ->assertHasErrors('email_password');
+        Livewire::test(Profile::class)->set('email', 'edu@other.test')->set('email_password', 'wrong')->call('saveProfile')
+            ->assertHasErrors('email_password')->assertSet('email_password', '');
+        Livewire::test(Profile::class)->set('email', 'stranger@acme.test')->set('email_password', 'secret-password')->call('saveProfile')
+            ->assertHasErrors('email');
+        $this->assertSame('edu@acme.test', $admin->fresh()->email);
+
+        Livewire::test(Profile::class)->set('name', 'Edu L')->call('saveProfile')->assertHasNoErrors();
+        Livewire::test(Profile::class)->set('email', 'edu@other.test')->set('email_password', 'secret-password')->call('saveProfile')
+            ->assertHasNoErrors();
+        $this->assertSame('edu@other.test', $admin->fresh()->email);
+    }
+
+    public function test_changing_ip_does_not_buy_more_guesses_at_the_same_email(): void
+    {
+        $this->admin();
+        foreach (range(1, 10) as $i) {
+            \Illuminate\Support\Facades\RateLimiter::hit('larachat-login-email:edu@acme.test', 900);
+        }
+
+        Livewire::test(Login::class)
+            ->set('email', 'edu@acme.test')->set('password', 'secret-password')
+            ->call('login')
+            ->assertHasErrors('email');
+        $this->assertGuest();
+    }
+
     public function test_logout(): void
     {
         $this->actingAs($this->admin());

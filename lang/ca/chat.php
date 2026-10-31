@@ -8,6 +8,8 @@ return [
     'blocked_no_email' => 'En aquesta conversa només puc atendre consultes sobre :site.',
     'limit' => 'Avui ja hem parlat molt per aquí. Si vols continuar, escriu-nos a :email i et respondrem personalment.',
     'limit_no_email' => 'Avui ja hem parlat molt per aquí. Torna demà i continuem.',
+    // The day's reply budget is spent: no model until midnight, the form instead.
+    'busy' => 'Ara mateix no et puc respondre amb detall. Deixa les teves dades a :owner aquí sota i t\'escriurà personalment.',
     'noise' => 'No ho he entès. Digues-me què necessites i t\'ajudo.',
     'offtopic' => 'Aquí només et puc ajudar amb el que té a veure amb :site. Què necessites?',
     'offtopic_blocked' => 'Aquest xat és només per a consultes sobre :site, així que per avui ho deixo aquí. Si necessites alguna cosa, escriu-nos a :email i et respondrem personalment.',
@@ -32,6 +34,7 @@ return [
     'form_close' => 'Vols que :owner t\'escrigui?',
     'form_handoff' => 'Deixa les teves dades a :owner',
     'form_wait' => ':owner encara no ha pogut respondre: deixa-li les teves dades',
+    'form_busy' => 'Perquè :owner t\'escrigui',
     'form_privacy' => 'Només les fem servir per respondre\'t.',
     'form_privacy_link' => 'Privacitat',
     'form_name_required' => 'Escriu el teu nom.',

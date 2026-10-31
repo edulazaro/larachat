@@ -39,7 +39,7 @@ class Chatbot
     }
 
     /**
-     * @return array{reply: string, handoff: bool, qualified: bool, ask_contact?: bool, off_topic?: bool, sources?: list<string>}|null
+     * @return array{reply: string, handoff: bool, qualified: bool, ask_contact?: bool, busy?: bool, off_topic?: bool, sources?: list<string>}|null
      *         null when the model could not be reached, so the caller can hand the conversation to a person
      */
     public function generateResponse(ChatSession $session, string $visitorMessage): ?array
@@ -83,6 +83,14 @@ class Chatbot
 
         if ($this->guard->isCodeRequest($visitorMessage)) {
             return $this->guarded('code', $locale);
+        }
+
+        // Only messages that reach the model count against today's budget, so the
+        // guards above (noise, injection, code) cannot be used to spend it.
+        if (! $this->guard->takeReply()) {
+            app(Notifier::class)->budgetSpent($this->guard->maxRepliesPerDay());
+
+            return ['reply' => $this->persona()->text('busy', $locale), 'handoff' => false, 'qualified' => false, 'busy' => true];
         }
 
         $turn = $this->prepareTurn($session, $visitorMessage, $locale);

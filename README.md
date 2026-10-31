@@ -135,6 +135,7 @@ Everything lives in `config/larachat.php`; the only environment variables are th
 | `admins` | The emails allowed into the panel, whatever other users exist |
 | `knowledge.driver` | `json` (no server) or `meilisearch` |
 | `knowledge.base_url`, `knowledge.content`, `knowledge.drop` | Your public URL, the element that holds each page's content, what to remove inside it |
+| `limits.replies_per_day` | Model replies per day for the whole site (500): the ceiling on what the chat can cost. Past it the bot answers with a fixed text and the contact form until midnight, and you get one email |
 | `lead.max_forms`, `lead.required` | How many contact forms per conversation (3) and the fields they require (name, email) |
 | `notifications` | Email to send alerts to; Telegram on or off |
 | `widget.storage_key` | Where the browser keeps the visitor's token (keep the old key when moving a site) |
@@ -246,12 +247,14 @@ to keep it open across pages.
 ## The panel
 
 `/larachat` shows the login to anyone who is not an admin and the inbox to you;
-`/larachat/profile` changes your name, email and password. Give `routes.login` a path of its
+`/larachat/profile` changes your name, email and password (changing the email asks for the
+current password and only takes an address in `admins`; a new password needs 12 characters). Give `routes.login` a path of its
 own and the login moves there, while the panel answers 404 to guests and to users who are not
 in `admins`, so only the login page shows there is one. Every panel page sends `noindex`, and
 each action is checked against `admins` again, not only the page load. The login answers a
-non-admin exactly as a wrong password, is rate-limited, and the password never travels back
-in Livewire's state.
+non-admin exactly as a wrong password and in the same time, is rate-limited per email and IP
+and per email alone, and the password never travels back in Livewire's state. The widget sends
+its token in a header when it polls, never in a URL that would end up in access logs.
 
 The inbox lists every conversation with at least one visitor message, filters them (unread,
 leads, with you, blocked), and lets you answer, take a conversation from the bot or hand it
@@ -270,7 +273,11 @@ If you forget the password, run `php artisan larachat:admin you@example.com` aga
 
 **Email** (`notifications.mail.to`): one message per new conversation, one when a visitor
 first shows interest and has left no details yet (so you can step in), and one per lead, sent
-after the response.
+after the response. These alerts are capped per visitor IP and day
+(`notifications.mail.per_ip_per_day`, 10), by email and Telegram, so a script opening
+conversations cannot flood your inbox; conversations you are in are never capped. Details are
+only accepted through a form the chat placed, once per form, so invented leads cannot be posted
+straight to the API.
 
 **Telegram**: set `enabled`, the bot token, your chat id and a webhook secret, then
 `php artisan larachat:telegram set`. You get new conversations, leads, handoffs and every

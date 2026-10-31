@@ -174,7 +174,12 @@ class ChatApiTest extends TestCase
 
     public function test_contact_form_poll_and_back_to_the_bot(): void
     {
+        config(['larachat.limits.switch_per_minute' => 100]);
         $token = $this->startChat('/es');
+
+        // No form in this conversation yet: nothing is taken, whatever is posted.
+        $this->postJson('/api/chat/contact', ['token' => $token, 'name' => 'Ana', 'email' => 'ana@acme.test'])->assertStatus(409)->assertJsonPath('code', 'no_form');
+        app(\EduLazaro\Larachat\Leads::class)->place(ChatSession::first(), 'interest');
 
         $this->postJson('/api/chat/contact', ['token' => $token])->assertStatus(422)->assertJsonPath('errors.name.0', 'Escribe tu nombre.');
         $this->postJson('/api/chat/contact', ['token' => $token, 'name' => 'Ana', 'phone' => '+376 600 111'])
@@ -189,9 +194,11 @@ class ChatApiTest extends TestCase
         $session = ChatSession::first();
         $this->assertSame(['Ana López', 'ana@acme.test', '+376 600 111'], [$session->visitor_name, $session->visitor_email, $session->visitor_phone]);
         $this->assertSame(['name' => 'Ana López', 'email' => 'ana@acme.test', 'phone' => '+376 600 111'], $session->messages()->where('kind', 'contact')->first()->meta);
+        $this->postJson('/api/chat/contact', ['token' => $token, 'name' => 'Otro', 'email' => 'otro@acme.test'])->assertStatus(409);
 
         ChatSession::first()->messages()->create(['sender' => 'admin', 'message' => 'Hola Ana, soy Edu']);
-        $poll = $this->getJson('/api/chat/poll?token=' . $token . '&after=0')->assertOk();
+        $this->getJson('/api/chat/poll?token=' . $token . '&after=0')->assertStatus(422);
+        $poll = $this->getJson('/api/chat/poll?after=0', ['X-Larachat-Token' => $token])->assertOk();
         $this->assertSame(['Gracias, Ana. Edu te escribirá a ana@acme.test lo antes posible.', 'Hola Ana, soy Edu'], array_column($poll->json('messages'), 'message'));
 
         ChatSession::first()->update(['mode' => 'human']);
@@ -217,6 +224,6 @@ class ChatApiTest extends TestCase
         ChatSession::first()->delete();
 
         $this->say($token, 'Hello')->assertStatus(404)->assertJsonPath('code', 'session_not_found');
-        $this->getJson('/api/chat/poll?token=' . $token)->assertStatus(404)->assertJsonPath('code', 'session_not_found');
+        $this->getJson('/api/chat/poll', ['X-Larachat-Token' => $token])->assertStatus(404)->assertJsonPath('code', 'session_not_found');
     }
 }

@@ -63,7 +63,8 @@
             return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(data) })
                 .then(function (r) { return r.json(); });
         }
-        function get(url) { return fetch(url, { headers: { 'Accept': 'application/json' } }).then(function (r) { return r.json(); }); }
+        // The token goes in a header on GET requests: in the URL it would be in every access log.
+        function get(url) { return fetch(url, { headers: { 'Accept': 'application/json', 'X-Larachat-Token': token || '' } }).then(function (r) { return r.json(); }); }
         function page() { return window.location.pathname; }
 
         function init() {
@@ -221,7 +222,7 @@
         function schedule() { if (alive) pollTimer = setTimeout(function () { poll().then(schedule); }, interval); }
         function poll() {
             if (!token || !started) return Promise.resolve();
-            return get(cfg.urls.poll + '?token=' + encodeURIComponent(token) + '&after=' + lastId).then(function (data) {
+            return get(cfg.urls.poll + '?after=' + lastId).then(function (data) {
                 if (data.code === 'session_not_found') { reset(); return; }
                 if (data.mode && data.mode !== mode) { mode = data.mode; updateMode(); }
                 if (data.has_contact) { hasContact = true; removeForm(); }

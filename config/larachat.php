@@ -161,6 +161,10 @@ return [
         'poll_per_minute' => 60,
         'switch_per_minute' => 5,
         'replies_per_ip_per_day' => 60,
+        // Model replies per day for the whole site, whatever the IPs: the ceiling on
+        // what the chat can cost. Past it the bot answers with a fixed text and the
+        // contact form until midnight, and the owner gets one email.
+        'replies_per_day' => 500,
         'messages_per_session' => 50,
         'message_chars' => 1000,
         // Prompt injection or unsafe replies before a conversation is closed for a day.
@@ -209,6 +213,9 @@ return [
     'notifications' => [
         'mail' => [
             'to' => null,
+            // Alerts (new conversation, interested visitor, lead) per visitor IP and
+            // day, by email and Telegram; past it a script cannot flood the inbox.
+            'per_ip_per_day' => 10,
         ],
         'telegram' => [
             'enabled' => false,

@@ -197,6 +197,23 @@ class Guard
         }
     }
 
+    /**
+     * Takes one model reply from today's budget for the whole site. False once
+     * it is spent: the caller answers without the model until midnight.
+     */
+    public function takeReply(): bool
+    {
+        $key = 'larachat-replies:' . now()->toDateString();
+        Cache::add($key, 0, now()->addDays(2));
+
+        return (int) Cache::increment($key) <= $this->maxRepliesPerDay();
+    }
+
+    public function maxRepliesPerDay(): int
+    {
+        return (int) config('larachat.limits.replies_per_day', 500);
+    }
+
     public function maxNoise(): int
     {
         return (int) config('larachat.limits.noise', 3);
