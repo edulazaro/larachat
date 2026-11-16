@@ -89,9 +89,10 @@ class ChatApiTest extends TestCase
         $third = $this->say($token, 'Who won the league?');
         $this->assertSame(__('larachat::chat.offtopic_blocked', ['site' => 'Acme', 'email' => 'hi@acme.test'], 'en'), $third->json('ai_reply'));
 
-        // A new conversation from the same IP is still closed, with no API call.
+        // The same IP cannot open another conversation, and no API call is made.
         $this->sent = [];
-        $this->say($this->startChat(), 'Hello again')->assertOk();
+        $this->postJson('/api/chat/init', ['page' => '/'])->assertStatus(403)->assertJsonPath('code', 'blocked');
+        $this->assertSame(1, ChatSession::count());
         $this->assertSame([], $this->sentSteps());
     }
 
@@ -122,9 +123,36 @@ class ChatApiTest extends TestCase
         $this->say($token, 'x')->assertJsonPath('ai_reply', $guard->refusal('noise', 'en'));
 
         $this->say($token, 'x')->assertJsonPath('ai_reply', $guard->refusal('offtopic_blocked', 'en'));
-        $this->say($this->startChat(), 'Do you build websites?')
-            ->assertJsonPath('ai_reply', $guard->refusal('offtopic_blocked', 'en'), 'the IP is closed too');
+        $this->postJson('/api/chat/init', ['page' => '/'])
+            ->assertStatus(403)->assertJsonPath('error', $guard->refusal('offtopic_blocked', 'en'));
 
+        Http::assertNothingSent();
+    }
+
+    public function test_a_closed_ip_fills_nothing_but_keeps_its_conversation(): void
+    {
+        Http::fake();
+        $guard = app(Guard::class);
+        $token = $this->startChat('/es/legal');
+        foreach (['x', 'x', 'x'] as $noise) {
+            $this->say($token, $noise, '/es/legal');
+        }
+        $stored = ChatMessage::count();
+
+        // What the scanner on kenodo.com did for 45 minutes: more messages, more conversations.
+        foreach (["e'\"", '(select 198766*667891)', 'e'] as $probe) {
+            $this->say($token, $probe, '/es/legal')
+                ->assertStatus(403)
+                ->assertJsonPath('code', 'blocked')
+                ->assertJsonPath('error', $guard->refusal('offtopic_blocked', 'es'));
+        }
+        foreach (range(1, 3) as $i) {
+            $this->postJson('/api/chat/init', ['page' => '/es/legal'])->assertStatus(403)->assertJsonPath('code', 'blocked');
+        }
+
+        $this->assertSame($stored, ChatMessage::count(), 'nothing new reaches the panel');
+        $this->assertSame(1, ChatSession::count());
+        $this->postJson('/api/chat/init', ['token' => $token, 'page' => '/es/legal'])->assertOk()->assertJsonPath('token', $token);
         Http::assertNothingSent();
     }
 

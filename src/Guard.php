@@ -154,6 +154,17 @@ class Guard
         return $count;
     }
 
+    /**
+     * The IP is closed for the day (enough noise or off-topic messages, from any
+     * of its conversations): it gets no new conversations and nothing it sends
+     * is stored.
+     */
+    public function isIpBlocked(?string $ip): bool
+    {
+        return $ip !== null && $ip !== ''
+            && (int) Cache::get('larachat-offtopic:ip:' . $ip, 0) >= $this->maxOffTopic();
+    }
+
     public function isOffTopicBlocked(int $sessionId, ?string $ip): bool
     {
         foreach ($this->offTopicKeys($sessionId, $ip) as $key) {

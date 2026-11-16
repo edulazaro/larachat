@@ -25,7 +25,7 @@ class ChatController extends Controller
     {
     }
 
-    public function init(Request $request): JsonResponse
+    public function init(Request $request, Guard $guard): JsonResponse
     {
         // Lenient: an unknown or malformed token just means a new conversation.
         $request->validate([
@@ -46,6 +46,15 @@ class ChatController extends Controller
                     'lead' => (bool) $session->qualified_at,
                 ]);
             }
+        }
+
+        // An IP closed for the day opens nothing new: each conversation was a row in
+        // the panel, and with a first message an alert, for a script that keeps going.
+        if ($guard->isIpBlocked($request->ip())) {
+            return response()->json([
+                'error' => $guard->refusal('offtopic_blocked', Larachat::locale($request->input('page'))),
+                'code' => 'blocked',
+            ], 403);
         }
 
         // Only new conversations count against init_per_minute: the widget restores
@@ -85,6 +94,15 @@ class ChatController extends Controller
 
         if ($session->status === 'closed') {
             return response()->json(['error' => $session->closedMessage()], 403);
+        }
+
+        // Closed for the day: the visitor still gets the closing text, but nothing is
+        // stored. The message that closed it is in the panel; what follows is not.
+        if ($guard->isIpBlocked($request->ip())) {
+            return response()->json([
+                'error' => $guard->refusal('offtopic_blocked', $session->locale()),
+                'code' => 'blocked',
+            ], 403);
         }
 
         $text = (string) $request->input('message');

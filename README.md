@@ -29,7 +29,8 @@ bot is (a persona) and how the widget looks.
 2. **Scope filter and embedding, in parallel.** A cheap model (`filter_model`) decides
    whether the message is for this chat at all, while the query is embedded. Off-topic gets a
    fixed answer and the main model is never called; a few of those (per conversation AND per
-   IP) close the chat for a day.
+   IP) close the chat for a day. A closed IP opens no new conversations and nothing it sends
+   is stored: it gets the closing text, and the panel keeps only the messages up to the close.
 3. **Retrieval.** Hybrid search (keywords plus vectors) over the chunks of your site in the
    visitor's language, at most two chunks per page, plus the first chunks of the page the
    visitor is on.

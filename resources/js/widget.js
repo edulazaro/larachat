@@ -239,6 +239,7 @@
             return new Promise(function (resolve, reject) {
                 if (token) { resolve(); return; }
                 post(cfg.urls.init, { token: null, page: page() }).then(function (data) {
+                    if (data && data.code === 'blocked') { reject({ blocked: data.error }); return; }
                     if (!data || !valid(data.token)) { reject(new Error('no session')); return; }
                     token = data.token; write(localStorage, storeKey, token); started = true; resolve();
                 }).catch(reject);
@@ -378,7 +379,7 @@
                 if (data.form) show(data.form);
                 waitForHuman();
                 startPolling();
-            }).catch(function () { sending = false; hideTyping(); add(escapeHtml(T.send_error || 'Error'), 'assistant'); });
+            }).catch(function (e) { sending = false; hideTyping(); add(escapeHtml((e && e.blocked) || T.send_error || 'Error'), 'assistant'); });
         }
 
         function showNudge(text, always) {
