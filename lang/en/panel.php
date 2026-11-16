@@ -48,6 +48,7 @@ return [
     'since' => 'since',
     'back' => 'Back',
     'delete' => 'Delete',
+    'cancel' => 'Cancel',
     'delete_confirm' => 'Delete this conversation and all its messages? This cannot be undone. If the visitor comes back, they start from scratch.',
     'delete_confirm_blocked' => ' Deleting it also lifts the block on their IP.',
     'unblock' => 'Unblock',

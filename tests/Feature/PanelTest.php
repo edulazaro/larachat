@@ -94,7 +94,9 @@ class PanelTest extends TestCase
         $session = $this->conversation('Necesito una web');
         $this->actingAs($admin);
 
-        $this->get('/larachat?c=' . $session->id)->assertOk()->assertSee('Conversaciones')->assertSee('Necesito una web');
+        $this->get('/larachat?c=' . $session->id)->assertOk()->assertSee('Conversaciones')->assertSee('Necesito una web')
+            // Delete and block ask inside the panel: a run of browser confirm() dialogs gets it flagged by pop-up blockers.
+            ->assertDontSee('wire:confirm', false)->assertSee('lc-confirm-ask', false);
 
         Livewire::test(Inbox::class)
             ->call('select', $session->id)

@@ -292,6 +292,10 @@
 .lc-contact a { color: #6ee7b7; }
 
 .lc-conv-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+[x-cloak] { display: none !important; }
+.lc-confirm { display: contents; }
+.lc-confirm-ask { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; flex-basis: 100%; }
+.lc-confirm-text { flex-basis: 100%; font-size: 0.8rem; color: #fca5a5; }
 
 .lc-back { display: none; }
 @media (max-width: 767.98px) {

@@ -53,8 +53,16 @@
                 </div>
                 <div class="lc-conv-actions">
                     <button type="button" class="lc-btn lc-back" wire:click="close">{{ __('larachat::panel.back') }}</button>
-                    <button type="button" class="lc-btn lc-btn--danger" wire:click="deleteConversation"
-                        wire:confirm="{{ __('larachat::panel.delete_confirm') }}{{ $current->blocked_at ? __('larachat::panel.delete_confirm_blocked') : '' }}">{{ __('larachat::panel.delete') }}</button>
+                    {{-- Asked here and not with the browser's confirm(): a run of those dialogs
+                         gets the panel flagged by pop-up blockers (Malwarebytes Browser Guard did). --}}
+                    <span class="lc-confirm" x-data="{ ask: false }">
+                        <button type="button" class="lc-btn lc-btn--danger" x-show="!ask" x-on:click="ask = true">{{ __('larachat::panel.delete') }}</button>
+                        <span class="lc-confirm-ask" x-show="ask" x-cloak>
+                            <span class="lc-confirm-text">{{ __('larachat::panel.delete_confirm') }}{{ $current->blocked_at ? __('larachat::panel.delete_confirm_blocked') : '' }}</span>
+                            <button type="button" class="lc-btn lc-btn--danger" wire:click="deleteConversation">{{ __('larachat::panel.delete') }}</button>
+                            <button type="button" class="lc-btn" x-on:click="ask = false">{{ __('larachat::panel.cancel') }}</button>
+                        </span>
+                    </span>
                     @if ($current->blocked_at)
                         <button type="button" class="lc-btn" wire:click="unblock">{{ __('larachat::panel.unblock') }}</button>
                     @else
@@ -63,8 +71,14 @@
                         @else
                             <button type="button" class="lc-btn" wire:click="take">{{ __('larachat::panel.take') }}</button>
                         @endif
-                        <button type="button" class="lc-btn lc-btn--danger" wire:click="block"
-                            wire:confirm="{{ __('larachat::panel.block_confirm', ['days' => (int) config('larachat.limits.ip_block_days', 30)]) }}">{{ __('larachat::panel.block') }}</button>
+                        <span class="lc-confirm" x-data="{ ask: false }">
+                            <button type="button" class="lc-btn lc-btn--danger" x-show="!ask" x-on:click="ask = true">{{ __('larachat::panel.block') }}</button>
+                            <span class="lc-confirm-ask" x-show="ask" x-cloak>
+                                <span class="lc-confirm-text">{{ __('larachat::panel.block_confirm', ['days' => (int) config('larachat.limits.ip_block_days', 30)]) }}</span>
+                                <button type="button" class="lc-btn lc-btn--danger" wire:click="block">{{ __('larachat::panel.block') }}</button>
+                                <button type="button" class="lc-btn" x-on:click="ask = false">{{ __('larachat::panel.cancel') }}</button>
+                            </span>
+                        </span>
                     @endif
                 </div>
             </div>

@@ -48,6 +48,7 @@ return [
     'since' => 'desde',
     'back' => 'Volver',
     'delete' => 'Borrar',
+    'cancel' => 'Cancelar',
     'delete_confirm' => '¿Borrar esta conversación y todos sus mensajes? No se puede deshacer. Si el visitante vuelve, empezará de cero.',
     'delete_confirm_blocked' => ' Al borrarla también se levanta el bloqueo de su IP.',
     'unblock' => 'Desbloquear',
